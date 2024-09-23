@@ -1,5 +1,6 @@
 import prisma from "../utils/database.js";
 import { Router } from 'express';
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
@@ -27,10 +28,11 @@ router.post('/login', async (req, res) => {
             credential
         }
     });
+    const token = jwt.sign({ id: team.id }, process.env.JWT_SECRET);
     if (team) {
         res.json({
           success: true,
-          data: team,
+          data: { team, token },
         });
     } else {
         res.status(404).json({success: false, message: "Team not found"});

@@ -15,7 +15,7 @@ datasource db {
 
 model TeamLogins {
   id         String @id @default(uuid())
-  track      Int
+  track      String
   name       String
   credential String @unique
 }
@@ -32,7 +32,7 @@ model Geolocations {
 
 model Clues {
   id             String       @id @default(uuid())
-  track          Int
+  track          String
   name           String
   clue           String
   location       Geolocations @relation(fields: [geolocationsId], references: [id])

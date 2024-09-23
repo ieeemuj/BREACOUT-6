@@ -4,13 +4,14 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc -b",
-    "dev": "npx ts-node app.ts",
+    "dev": "npx ts-node app.js",
     "start": "node dist/app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "type": "module",
   "dependencies": {
     "@prisma/client": "^5.19.1",
     "body-parser": "^1.20.2",

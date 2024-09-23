@@ -2,7 +2,7 @@ import express from 'express';
 import {configDotenv} from "dotenv";
 import cors from 'cors';
 
-import team from "./modules/team";
+import team from "./modules/team.js";
 
 configDotenv();
 const app = express();

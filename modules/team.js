@@ -1,4 +1,4 @@
-import prisma from "../utils/database";
+import prisma from "../utils/database.js";
 import { Router } from 'express';
 
 const router = Router();

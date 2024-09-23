@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "echo 'Nothing'",
+    "build": "echo 'Nothing'; exit 0;",
     "dev": "npx ts-node app.js",
     "start": "node dist/app.js"
   },

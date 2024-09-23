@@ -14,7 +14,7 @@ router.get('/', async(req, res, next) => {
         res.status(404).json({success: false, message: "Team not found"});
     }
 
-    const clue = await prisma.clue.findFirst({
+    const clue = await prisma.clues.findFirst({
         where: {
             track: team.track,
             clueno: team.clueno,

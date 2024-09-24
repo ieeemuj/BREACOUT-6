@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Alert, Button, Spinner } from "flowbite-react";
 import { useRouter } from "next/navigation";
 import { FaArrowRight } from "react-icons/fa6";
-chgfxg
 
 const Home = () => {
   const [formData, setFormData] = useState({});
@@ -11,7 +10,7 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [expandedImage, setExpandedImage] = useState(null);
   const router = useRouter();
-  
+
   const imageRefs = useRef([]);
   const containerRef = useRef(null);
 
@@ -65,7 +64,7 @@ const Home = () => {
 
   const expandImage = (index) => {
     setExpandedImage(index);
-    
+
     // gsap.to(imageRefs.current[index], {
     //   duration: 1,
     //   width: '100vw',
@@ -128,13 +127,14 @@ const Home = () => {
               <input
                 type="text"
                 placeholder="Username"
-                className="w-full p-4 rounded-lg h-10"
+                className="w-full p-4 rounded-lg h-10 text-black bg-[#ffffff] bg-opacity-50 outline-0"
                 id="username"
                 onChange={handleChange}
+                autoComplete={"off"}
               />
             </div>
             <div className="w-22">
-             
+
             </div>
             <Button
               gradientDuoTone="purpleToPink"

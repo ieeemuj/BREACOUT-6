@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Alert, Button, Spinner } from "flowbite-react";
 import { useRouter } from "next/navigation";
 import { FaArrowRight } from "react-icons/fa6";
+import { get, post } from "./service";
 
 const Home = () => {
   const [formData, setFormData] = useState({});
@@ -28,7 +29,7 @@ const Home = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.username) {
+    if (!formData.credential) {
       return setErrorMessage("Please fill all the details.");
     }
 
@@ -36,26 +37,21 @@ const Home = () => {
       setLoading(true);
       setErrorMessage(null);
 
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const data = await post("team/login", {
+        credential: formData.credential
       });
 
-      const data = await res.json();
-      if (data.success === false) {
+      console.log(data);
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("team", JSON.stringify(data.data.team));
+      if (!data.success) {
         return setErrorMessage(data.message);
       }
 
       setLoading(false);
 
-      if (res.ok) {
-        // Simulate server response for image selection (replace with actual logic)
-        const selectedImageIndex = Math.floor(Math.random() * images.length);
-        expandImage(selectedImageIndex);
-      }
+      const selectedImageIndex = Math.floor(Math.random() * images.length);
+      expandImage(selectedImageIndex);
     } catch (error) {
       setErrorMessage(error.message);
       setLoading(false);
@@ -64,7 +60,7 @@ const Home = () => {
 
   const expandImage = (index) => {
     setExpandedImage(index);
-
+    router.push('/team');
     // gsap.to(imageRefs.current[index], {
     //   duration: 1,
     //   width: '100vw',
@@ -127,8 +123,8 @@ const Home = () => {
               <input
                 type="text"
                 placeholder="Username"
-                className="w-full p-4 rounded-lg h-10 text-black bg-[#ffffff] bg-opacity-50 outline-0"
-                id="username"
+                className="w-full p-4 rounded-lg h-10 text-black bg-[#ffffff] bg-opacity-50 outline-0 placeholder-gray-700"
+                id="credential"
                 onChange={handleChange}
                 autoComplete={"off"}
               />
@@ -144,7 +140,7 @@ const Home = () => {
               {loading ? (
                 <div className="">
                   <Spinner size="sm" />
-                  <span className="pl-3">Loading</span>
+                  <span>Loading</span>
                 </div>
               ) : (
                 <span className="font-bold text-xl border-2 px-6 py-2 rounded-2xl backdrop-blur-lg bg-white/30 border-white">

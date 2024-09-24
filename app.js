@@ -12,9 +12,9 @@ app.use(cors({
     origin: '*'
 }));
 app.use(express.json());
-app.use((req, res) => {
+app.use((req, res, next) => {
   if (req.url === '/team/login')
-    return;
+    return next();
 
   const token = req.headers['authorization'];
   if (!token) {
@@ -27,6 +27,7 @@ app.use((req, res) => {
     }
     req.team = decoded;
   });
+  next();
 });
 
 app.use('/team', team);

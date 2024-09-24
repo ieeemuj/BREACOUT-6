@@ -25,6 +25,6 @@ router.get('/', async(req, res, next) => {
     } else {
         res.status(404).json({success: false, message: "Clue not found"});
     }
-})
+});
 
 export default router;

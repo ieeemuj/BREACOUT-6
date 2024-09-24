@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use((req, res) => {
-  if (req.route === '/team/login')
+  if (req.url === '/team/login')
     return;
 
   const token = req.headers['authorization'];

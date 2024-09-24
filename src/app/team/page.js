@@ -67,7 +67,7 @@ const ThemePages = () => {
             Team
           </p>
           <p
-            className={`font-bold text-4xl text-center pt-2 text-[#D37E01]`}
+            className={`font-bold text-4xl text-center pt-2 text-[#D37E01] font-teamname`}
           >
             {team.name}
           </p>

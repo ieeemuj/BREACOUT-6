@@ -40,6 +40,7 @@ const ThemePages = () => {
   const [clue, setClue] = useState({});
   const [userLocation, setUserLocation] = useState({ lat: 26.9124, lng: 75.7873 });
   const [loading, setLoading] = useState(false);
+  const [rendering, setRendering] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -53,6 +54,7 @@ const ThemePages = () => {
     setTeam(team);
     setClue(clue);
     setTheme(theme);
+    setRendering(false);
   }, []);
 
 
@@ -84,7 +86,7 @@ const ThemePages = () => {
     }
   }
 
-  if (!theme) {
+  if (!rendering) {
     return <div>Loading...</div>;
   }
 

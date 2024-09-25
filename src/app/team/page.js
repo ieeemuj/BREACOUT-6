@@ -73,12 +73,13 @@ const ThemePages = () => {
           lan: userLocation.lng
         });
         console.log(res);
-        alert(res);
+        alert(JSON.stringify(res));
         setLoading(false);
 
-      }, function() {
+      }, function(err) {
         console.log('error callback');
-        alert('error callback')
+        alert(err);
+        alert(JSON.stringify(err));
         setLoading(false);
       });
     } else {

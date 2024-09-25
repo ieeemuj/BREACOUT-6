@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3000'
+const BASE_URL = 'https://breacout5backend.vercel.app'
 
 function get(path) {
   return fetch(`${BASE_URL}/${path}`, {

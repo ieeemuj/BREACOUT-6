@@ -78,8 +78,8 @@ const ThemePages = () => {
 
       }, function(err) {
         console.log('error callback');
-        alert(err);
-        alert(JSON.stringify(err));
+        alert(err.message);
+        alert(err.code);
         setLoading(false);
       });
     } else {

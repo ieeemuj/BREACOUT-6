@@ -36,7 +36,8 @@ const themeData = {
 
 const ThemePages = () => {
   const [theme, setTheme] = useState(themeData[JSON.parse(localStorage.getItem("team"))?.track]);
-  const [team, setTeam] = useState({});
+  const [team, setTeam] = useState(JSON.parse(localStorage.getItem("team")));
+  const [clue, setClue] = useState(JSON.parse(localStorage.getItem("clue")));
   const [userLocation, setUserLocation] = useState({ lat: 26.9124, lng: 75.7873 });
   const [loading, setLoading] = useState(false);
 
@@ -112,8 +113,7 @@ const ThemePages = () => {
             className={`rounded-2xl p-4 ${theme.bgColor} border-4 ${theme.borderColor}`}
           >
             <p className="text-white text-center text-xl font-sans">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
-              vehicula lacus ut eros tempor, ac facilisis odio.
+              {clue.clue}
             </p>
           </div>
         </div>

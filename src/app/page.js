@@ -44,6 +44,7 @@ const Home = () => {
       console.log(data);
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("team", JSON.stringify(data.data.team));
+      localStorage.setItem("clue", JSON.stringify(data.data.clue));
       if (!data.success) {
         return setErrorMessage(data.message);
       }

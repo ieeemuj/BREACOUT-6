@@ -73,15 +73,18 @@ const ThemePages = () => {
           lan: userLocation.lng
         });
         console.log(res);
+        alert(res);
         setLoading(false);
 
       }, function() {
         console.log('error callback');
+        alert('error callback')
         setLoading(false);
       });
     } else {
       // Browser doesn't support Geolocation
       console.log('Browser does not support geolocation');
+      alert('Browser does not support geolocation');
       setLoading(false);
     }
   }

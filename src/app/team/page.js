@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { get } from "../service";
+import { post } from "../service";
 
 const themeData = {
   gr: {
@@ -37,6 +37,8 @@ const themeData = {
 const ThemePages = () => {
   const [theme, setTheme] = useState(themeData[JSON.parse(localStorage.getItem("team"))?.track]);
   const [team, setTeam] = useState({});
+  const [userLocation, setUserLocation] = useState({ lat: 26.9124, lng: 75.7873 });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -47,6 +49,35 @@ const ThemePages = () => {
     const team = JSON.parse(localStorage.getItem("team"));
     setTeam(team);
   }, []);
+
+
+  function checkLocation() {
+    setLoading(true);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async function(position) {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        console.log(userLocation);
+        const res = await post("clue/submit", {
+          lat: userLocation.lat,
+          lan: userLocation.lng
+        });
+        console.log(res);
+        setLoading(false);
+
+      }, function() {
+        console.log('error callback');
+        setLoading(false);
+      });
+    } else {
+      // Browser doesn't support Geolocation
+      console.log('Browser does not support geolocation');
+      setLoading(false);
+    }
+  }
 
   if (!theme) {
     return <div>Loading...</div>;
@@ -90,11 +121,14 @@ const ThemePages = () => {
 
       {/* Check location */}
       <div className="mt-10">
-        <div
+        {loading ?
+          <div className="text-xl text-md">Checking...</div>
+          : <div
           className={`rounded-2xl w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} whitespace-nowrap`}
+          onClick={checkLocation}
         >
           Check location
-        </div>
+        </div>}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ model TeamLogins {
   track      String
   name       String
   credential String @unique
+  clueno     Int
 }
 
 model Geolocations {
@@ -26,7 +27,6 @@ model Geolocations {
   coordinate2 String[]
   coordinate3 String[]
   coordinate4 String[]
-  clue        String
   Clues       Clues[]
 }
 
@@ -37,4 +37,5 @@ model Clues {
   clue           String
   location       Geolocations @relation(fields: [geolocationsId], references: [id])
   geolocationsId String
+  clueno         Int
 }

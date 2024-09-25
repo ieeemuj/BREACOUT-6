@@ -1,5 +1,3 @@
-import { Geofence, Location } from '../types';
-
 // Helper function to calculate the cross product of vectors AB and AC
 function crossProduct(A, B, C) {
   return (B.lat - A.lat) * (C.lng - A.lng) - (B.lng - A.lng) * (C.lat - A.lat);

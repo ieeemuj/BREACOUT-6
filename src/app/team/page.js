@@ -78,6 +78,10 @@ const ThemePages = () => {
 
       }, function(err) {
         console.log('error callback');
+        if (err.code === 1) {
+          alert('Error: You have denied the location permission. Please allow location for this website.');
+          return;
+        }
         alert(err.message);
         alert(err.code);
         setLoading(false);

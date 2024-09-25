@@ -35,9 +35,9 @@ const themeData = {
 
 
 const ThemePages = () => {
-  const [theme, setTheme] = useState(themeData[JSON.parse(localStorage.getItem("team"))?.track]);
-  const [team, setTeam] = useState(JSON.parse(localStorage.getItem("team")));
-  const [clue, setClue] = useState(JSON.parse(localStorage.getItem("clue")));
+  const [theme, setTheme] = useState({});
+  const [team, setTeam] = useState({});
+  const [clue, setClue] = useState({});
   const [userLocation, setUserLocation] = useState({ lat: 26.9124, lng: 75.7873 });
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +48,11 @@ const ThemePages = () => {
     }
 
     const team = JSON.parse(localStorage.getItem("team"));
+    const clue = JSON.parse(localStorage.getItem("clue"));
+    const theme = themeData[team.track];
     setTeam(team);
+    setClue(clue);
+    setTheme(theme);
   }, []);
 
 

@@ -86,7 +86,7 @@ const ThemePages = () => {
     }
   }
 
-  if (!rendering) {
+  if (rendering) {
     return <div>Loading...</div>;
   }
 

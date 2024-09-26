@@ -76,7 +76,7 @@ router.post('/submit', async(req, res, next) => {
     }
 
     console.log(clue);
-    res.json({success: true, message: "Correct location", clue});
+    res.json({success: true, message: "Correct location", clue: nextClue});
 });
 
 export default router;

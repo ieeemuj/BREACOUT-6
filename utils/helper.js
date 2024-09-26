@@ -1,19 +1,12 @@
 // Function to check if a point is within the geofence
 export function checkGeofence(geofence, location) {
+  const {lat, lan} = location;
   const { coordinate1, coordinate2, coordinate3, coordinate4 } = geofence;
-  const polygon = [coordinate1, coordinate2, coordinate3, coordinate4];
-  let inside = false;
-  const x = location.lat, y = location.lan;
+  const minLat = Math.min(coordinate1.lat, coordinate2.lat, coordinate3.lat, coordinate4.lat);
+  const maxLat = Math.max(coordinate1.lat, coordinate2.lat, coordinate3.lat, coordinate4.lat);
+  const minlan = Math.min(coordinate1.lan, coordinate2.lan, coordinate3.lan, coordinate4.lan);
+  const maxlan = Math.max(coordinate1.lan, coordinate2.lan, coordinate3.lan, coordinate4.lan);
 
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i][0], yi = polygon[i][1];
-    const xj = polygon[j][0], yj = polygon[j][1];
-
-    const intersect = ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-
-    if (intersect) inside = !inside;
-  }
-
-  return inside;
+  // Check if the point is within the bounds
+  return lat >= minLat && lat <= maxLat && lan >= minlan && lan <= maxlan;
 }

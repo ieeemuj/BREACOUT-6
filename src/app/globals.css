@@ -1,11 +1,44 @@
+/* globals.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Define custom fonts */
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('/fonts/GeistVF.woff') format('woff');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Astrolab';
+  src: url('/fonts/Astrolab.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'GeistVF';
+  src: url('/fonts/GeistVF.woff') format('woff');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'GeistMonoVF';
+  src: url('/fonts/GeistMonoVF.woff') format('woff');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -17,18 +50,29 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+ 
 }
 
+
+.font-geist-sans {
+  font-family: 'Geist Sans', sans-serif;
+}
+
+.font-astrolab {
+  font-family: 'Astrolab', serif; 
+}
+
+.font-geist-vf {
+  font-family: 'GeistVF', sans-serif;
+}
+
+.font-geist-mono {
+  font-family: 'GeistMonoVF', sans-serif;
+}
+
+/* Additional utility classes */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-@font-face {
-  font-family: 'AstroLab';
-  src: url('../../public/Astrolab.ttf') format('ttf');
-  font-weight: normal;
-  font-style: normal;
 }

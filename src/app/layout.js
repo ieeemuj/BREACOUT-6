@@ -13,8 +13,8 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "Breacout",
-  description: "Breacout Genesis 4.0",
+  title: "Breacout 5.0",
+  description: "The official Breacout website for Genesis 4.0",
 };
 
 export default function RootLayout({ children }) {

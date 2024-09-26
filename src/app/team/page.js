@@ -4,28 +4,28 @@ import { post } from "../service";
 
 const themeData = {
   gr: {
-    image: "/gryffindor.png",
+    image: "https://images.prismic.io/ieeemuj/ZvUbArVsGrYSwBTC_gryffindor.png?auto=format,compress",
     bgColor: "bg-[#501D27]",
     borderColor: "border-[#D37E01]",
     logo: "/g-1.png",
     name: "Gryffindor",
   },
   hu: {
-    image: "/hufflepuff.png",
+    image: "https://images.prismic.io/ieeemuj/ZvUbD7VsGrYSwBTD_hufflepuff.png?auto=format,compress",
     bgColor: "bg-[#D37E01]",
     borderColor: "border-[#D37E01]",
     logo: "/h-1.png",
     name: "Hufflepuff",
   },
   ra: {
-    image: "/ravenclaw.png",
+    image: "https://images.prismic.io/ieeemuj/ZvUbIbVsGrYSwBTG_ravenclaw.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
     borderColor: "border-[#D37E01]",
     logo: "/r-1.png",
     name: "Ravenclaw",
   },
   sl: {
-    image: "/slytherin.png",
+    image: "https://images.prismic.io/ieeemuj/ZvUa5bVsGrYSwBS-_slytherin.png?auto=format,compress",
     bgColor: "bg-[#134731]",
     borderColor: "border-[#D37E01]",
     logo: "/s-1.png",
@@ -95,7 +95,13 @@ const ThemePages = () => {
   }
 
   if (rendering) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <div className="text-3xl">
+          Loading.. Please wait.
+        </div>
+      </div>
+    )
   }
 
   return (

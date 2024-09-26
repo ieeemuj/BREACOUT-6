@@ -111,8 +111,9 @@ const Home = () => {
         <div>
           <h1 className="font-bold text-center">
             <span className="text-2xl">WELCOME TO</span>
+            <br/>
             <br />
-            <span className="text-5xl custom-font">BREACOUT</span>
+            <span className="text-4xl font-astrolab">BREACOUT</span>
           </h1>
         </div>
         <div>

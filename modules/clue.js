@@ -60,6 +60,7 @@ router.post('/submit', async(req, res, next) => {
     }
 
     const correctLocation = checkGeofence(clue.location, {lat, lan});
+    console.log(correctLocation);
     // if (!correctLocation) {
     //     return res.json({success: false, message: "You are not at the correct location"});
     // }
@@ -72,11 +73,11 @@ router.post('/submit', async(req, res, next) => {
     });
 
     if (!nextClue) {
-        return res.json({success: true, message: "Congratulations! You have completed the treasure hunt"});
+        return res.json({success: true, message: "Congratulations! You have completed the treasure hunt", correctLocation});
     }
 
     console.log(clue);
-    res.json({success: true, message: "Correct location", clue: nextClue});
+    res.json({success: true, message: "Correct location", clue: nextClue, correctLocation});
 });
 
 export default router;

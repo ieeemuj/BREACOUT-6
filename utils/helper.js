@@ -1,25 +1,23 @@
 // Function to check if a point is within the geofence
-export function checkGeofence(geofence, point) {
-  // const {lat, lan} = location;
-  // const minLat = Math.min(coordinate1.lat, coordinate2.lat, coordinate3.lat, coordinate4.lat);
-  // const maxLat = Math.max(coordinate1.lat, coordinate2.lat, coordinate3.lat, coordinate4.lat);
-  // const minlan = Math.min(coordinate1.lan, coordinate2.lan, coordinate3.lan, coordinate4.lan);
-  // const maxlan = Math.max(coordinate1.lan, coordinate2.lan, coordinate3.lan, coordinate4.lan);
-  const { coordinate1, coordinate2, coordinate3, coordinate4 } = geofence;
-  const polygon = [coordinate1, coordinate2, coordinate3, coordinate4];
-  let odd = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; i++) {
-    if (
-      ((polygon[i][1] > point[1]) !== (polygon[j][1] > point[1]))
-      &&
-      (point[0] < ((polygon[j][0] - polygon[i][0]) * (point[1] - polygon[i][1]) / (polygon[j][1] - polygon[i][1]) + polygon[i][0]))
-    ) {
-      odd = !odd;
-    }
-    j = i;
-  }
-  return odd;
+export function checkGeofence(point, geolocation) {
+  const polygon = [
+    geolocation.coordinate1,
+    geolocation.coordinate2,
+    geolocation.coordinate3,
+    geolocation.coordinate4,
+  ]
 
-  // Check if the point is within the bounds
-  // return lat >= minLat && lat <= maxLat && lan >= minlan && lan <= maxlan;
+  const x = point[0], y = point[1];
+
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = parseFloat(polygon[i][0]), yi = parseFloat(polygon[i][1]);
+    const xj = parseFloat(polygon[j][0]), yj = parseFloat(polygon[j][1]);
+
+    const intersect = ((yi > y) !== (yj > y))
+      && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
 }

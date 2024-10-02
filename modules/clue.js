@@ -59,11 +59,10 @@ router.post('/submit', async(req, res, next) => {
         return res.status(404).json({success: false, message: "Clue not found"});
     }
 
-    const correctLocation = checkGeofence(clue.location, [lat, lan]);
-    console.log(correctLocation);
-    // if (!correctLocation) {
-    //     return res.json({success: false, message: "You are not at the correct location"});
-    // }
+    const correctLocation = checkGeofence([lat, lan], clue.location);
+    if (!correctLocation) {
+        return res.json({success: false, message: "You are not at the correct location"});
+    }
 
     const nextClue = await prisma.clues.findFirst({
         where: {

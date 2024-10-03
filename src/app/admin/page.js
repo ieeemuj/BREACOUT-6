@@ -1,17 +1,18 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { get, post } from "../service";
+import { post } from "../service";
 
-export default function AdminPage() {
+const LoginForm = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
+
   const login = async () => {
-    const username = "sam";
-    const password = "sam";
     try {
-      const data = await post("admin/login", { username, password });
-      if (data.success) { 
+      const data = await post(`admin/login`, { username, password });
+      if (data.success) {
         localStorage.setItem("token", data.data.token);
         setIsLoggedIn(true);
         console.log("Login successful");
@@ -24,25 +25,61 @@ export default function AdminPage() {
     }
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    login();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-10">
-  <div className="bg-white shadow-lg rounded-lg p-5 max-w-md w-full">
-    <h1 className="text-2xl font-semibold text-center mb-6 text-gray-700">
-      Admin Panel Login
-    </h1>
-
-    {!isLoggedIn ? (
-      <button
-        onClick={login}
-        className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition duration-300 ease-in-out"
+    <div className="flex items-center justify-center w-screen h-screen bg-[#624E88] p-5">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col justify-center max-w-md w-full mx-auto p-10 bg-[url('/image.png')] bg-cover rounded-lg shadow-lg items-center"
       >
-        Login
-      </button>
-    ) : (
-      <p className="text-center text-gray-500 mt-4">Redirecting...</p>
-    )}
-  </div>
-</div>
-
+        <h2 className="text-3xl font-bold text-center mb-6 text-black ">
+          🎀 Login 🎀
+        </h2>
+        <div className="mb-6 w-full">
+          <label
+            htmlFor="username"
+            className="block text-xl text-black font-bold"
+          >
+            Username:
+          </label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="mt-2 block w-full  rounded-md shadow-sm  p-2"
+          />
+        </div>
+        <div className="mb-6 w-full">
+          <label
+            htmlFor="password"
+            className="block text-xl font-bold text-black"
+          >
+            Password:
+          </label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="mt-2 block w-full rounded-md shadow-sm  p-2"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-auto text-black bg-white  font-bold px-5 py-3 rounded-md "
+        >
+          Login
+        </button>
+      </form>
+    </div>
   );
-}
+};
+
+export default LoginForm;

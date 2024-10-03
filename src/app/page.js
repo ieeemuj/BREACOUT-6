@@ -50,7 +50,7 @@ const Home = () => {
         return alert("Wrong credentials, please try again.");
       }
   
-      // Successful login: store tokens and proceed
+     
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("team", JSON.stringify(data.data.team));
       localStorage.setItem("clue", JSON.stringify(data.data.clue));

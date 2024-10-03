@@ -69,7 +69,7 @@ router.post('/stop', async(req, res, next) => {
   const { track } = req.body;
   const team = await prisma.teamLogins.updateMany({
     where: {
-      track,
+      track: track,
     },
     data: {
       stopped: true,
@@ -88,7 +88,7 @@ router.post('/start', async(req, res, next) => {
   const { track } = req.body;
   const team = await prisma.teamLogins.updateMany({
     where: {
-      track,
+      track: track,
     },
     data: {
       stopped: false,

@@ -14,11 +14,12 @@ datasource db {
 }
 
 model TeamLogins {
-  id         String @id @default(uuid())
+  id         String  @id @default(uuid())
   track      String
   name       String
-  credential String @unique
+  credential String  @unique
   clueno     Int
+  stopped    Boolean @default(false)
 }
 
 model Geolocations {
@@ -38,4 +39,11 @@ model Clues {
   location       Geolocations @relation(fields: [geolocationsId], references: [id])
   geolocationsId String
   clueno         Int
+}
+
+model Admins {
+  id       Int    @id
+  username String
+  password String
+  token    String
 }

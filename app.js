@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 
 import team from "./modules/team.js";
 import clue from "./modules/clue.js";
+import admin from "./modules/admin.js";
 
 configDotenv();
 const app = express();
@@ -14,7 +15,7 @@ app.use(cors({
 app.use(express.json());
 app.use((req, res, next) => {
   console.log(req.url);
-  if (req.url === '/team/login')
+  if (req.url === '/team/login' || req.url.startsWith('/admin'))
     return next();
 
   const token = req.headers['authorization'];
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
 
 app.use('/team', team);
 app.use('/clue', clue);
+app.use('/admin', admin);
 
 app.on('/', (req, res) => {
     res.send('Hello World');

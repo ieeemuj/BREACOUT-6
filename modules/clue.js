@@ -5,7 +5,7 @@ import {checkGeofence} from "../utils/helper.js";
 const router = Router();
 
 router.get('/', async(req, res, next) => {
-    const team = await prisma.team.findFirst({
+    const team = await prisma.teamLogins.findFirst({
         where: {
             id: req.team.id
         }
@@ -43,6 +43,10 @@ router.post('/submit', async(req, res, next) => {
 
     if (!team) {
         res.status(404).json({success: false, message: "Team not found"});
+    }
+
+    if (team.stopped) {
+        return res.json({success: false, message: "Your track is stopped. Please contact the organizers."});
     }
 
     const clue = await prisma.clues.findFirst({

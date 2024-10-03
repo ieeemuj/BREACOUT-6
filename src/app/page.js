@@ -29,29 +29,35 @@ const Home = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!formData.credential) {
       return setErrorMessage("Please fill all the details.");
     }
-
+  
     try {
       setLoading(true);
       setErrorMessage(null);
-
+  
       const data = await post("team/login", {
         credential: formData.credential
       });
-
+  
       console.log(data);
+  
+      // Check if login was unsuccessful and show an alert
+      if (!data.success) {
+        setLoading(false);
+        return alert("Wrong credentials, please try again.");
+      }
+  
+      // Successful login: store tokens and proceed
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("team", JSON.stringify(data.data.team));
       localStorage.setItem("clue", JSON.stringify(data.data.clue));
-      if (!data.success) {
-        return setErrorMessage(data.message);
-      }
-
+  
       setLoading(false);
-
+  
+      // Randomly select and expand an image
       const selectedImageIndex = Math.floor(Math.random() * images.length);
       expandImage(selectedImageIndex);
     } catch (error) {
@@ -59,6 +65,7 @@ const Home = () => {
       setLoading(false);
     }
   };
+  
 
   const expandImage = (index) => {
     setExpandedImage(index);

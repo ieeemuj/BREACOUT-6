@@ -20,7 +20,7 @@ const themeData = {
     logo: "/h-1.png",
     name: "Hufflepuff",
   },
-  ra: {
+  re: {
     image:
       "https://images.prismic.io/ieeemuj/ZvUbIbVsGrYSwBTG_ravenclaw.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
@@ -96,6 +96,8 @@ const ThemePages = () => {
           if (res.success) {
             localStorage.setItem("clue", JSON.stringify(res.clue));
             setClue(res.clue);
+          } else {
+            alert(res.message);
           }
           setCountdown(10);
           setLoading(false);
@@ -158,7 +160,7 @@ const ThemePages = () => {
           <div
             className={`rounded-2xl p-4 ${theme.bgColor} border-4 ${theme.borderColor}`}
           >
-            <p className="text-white text-center text-xl font-geist-mono select-none">
+            <p className="text-white text-center text-sm font-geist-mono select-none">
               {clue.clue}
             </p>
           </div>

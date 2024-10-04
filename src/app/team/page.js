@@ -72,8 +72,6 @@ const ThemePages = () => {
       interval = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
-    } else if (countdown === 0) {
-      setLoading(false);
     }
 
     return () => clearInterval(interval);
@@ -81,7 +79,6 @@ const ThemePages = () => {
 
   async function checkLocation() {
     setLoading(true);
-    setCountdown(10);
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -96,16 +93,18 @@ const ThemePages = () => {
             lan: userLocation.lng,
           });
           console.log(res);
-          alert(JSON.stringify(res));
-          localStorage.setItem("clue", JSON.stringify(res.clue));
-          setClue(res.clue);
+          if (res.success) {
+            localStorage.setItem("clue", JSON.stringify(res.clue));
+            setClue(res.clue);
+          }
           setCountdown(10);
+          setLoading(false);
         },
         function (err) {
           console.log("error callback");
           if (err.code === 1) {
             alert(
-              "Error: You have denied the location permission. Please allow location for this website."
+              "Error: You have denied the location permission. Please allow location for this website and refresh the webpage."
             );
             setLoading(false);
             return;
@@ -118,7 +117,7 @@ const ThemePages = () => {
     } else {
       // Browser doesn't support Geolocation
       console.log("Browser does not support geolocation");
-      alert("Browser does not support geolocation");
+      alert("Browser does not support geolocation. Please try another browser.");
       setLoading(false);
     }
   }
@@ -159,7 +158,7 @@ const ThemePages = () => {
           <div
             className={`rounded-2xl p-4 ${theme.bgColor} border-4 ${theme.borderColor}`}
           >
-            <p className="text-white text-center text-xl font-geist-mono">
+            <p className="text-white text-center text-xl font-geist-mono select-none">
               {clue.clue}
             </p>
           </div>
@@ -168,12 +167,14 @@ const ThemePages = () => {
 
       {/* Check location */}
       <div className="mt-10">
-        <div
-          className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} whitespace-nowrap`}
+        <button
+          className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} 
+          whitespace-nowrap cursor-pointer ${(countdown > 0 || loading) ? 'disabled:opacity-70' : ''}`}
           onClick={loading ? null : checkLocation}
+          disabled={countdown > 0 || loading}
         >
-          {loading ? `Please wait (${countdown})` : "Check location"}
-        </div>
+          {loading ? `Checking...` : countdown > 0 ? `Please wait (${countdown})` : "Check location"}
+        </button>
       </div>
     </div>
   );

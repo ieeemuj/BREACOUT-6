@@ -3,10 +3,18 @@
 import { get, post } from "@/app/service";
 import { useState } from "react";
 
+const trackMap = {
+  gr: "Gryffindor",
+  hu: "Hufflepuff",
+  sl: "Slytherin",
+  re: "Ravenclaw",
+}
+
 export default function Dashboard() {
   const [track, setTrack] = useState("");
   const [teams, setTeams] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [stopped, setStopped] = useState(false);
 
   // Fetch teams
   const fetchTeams = async (selectedTrack) => {
@@ -19,6 +27,7 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       const data = await get(`admin/teams?track=${selectedTrack}`);
+      const stopped = !!data[0]?.stopped;
       setTeams(data);
       setTrack(selectedTrack);
     } catch (error) {
@@ -67,27 +76,27 @@ export default function Dashboard() {
       <h2 className="text-xl font-semibold text-gray-700 mb-4">
         Select a Track
       </h2>
-      <div className="space-x-4 mb-6 ">
+      <div className="mb-6 *:bg-blue-500 *:text-white *:px-4 *:py-2 *:rounded *:w-64 gap-2 flex flex-col">
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className=" hover:bg-blue-600 transition"
           onClick={() => fetchTeams("gr")}
         >
           Get Teams for Track GR
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className=" hover:bg-blue-600 transition"
           onClick={() => fetchTeams("hu")}
         >
           Get Teams for Track HU
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className=" hover:bg-blue-600 transition"
           onClick={() => fetchTeams("sl")}
         >
           Get Teams for Track SL
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className=" hover:bg-blue-600 transition"
           onClick={() => fetchTeams("re")}
         >
           Get Teams for Track RE
@@ -95,15 +104,16 @@ export default function Dashboard() {
       </div>
 
       <h3 className="text-lg font-semibold text-gray-700 mb-4">
-        Teams for Track {track.toUpperCase()}:
+        Teams for {trackMap[track]}:
       </h3>
       {isLoading ? (
         <p className="text-gray-600">Loading teams...</p>
       ) : (
         <ul className="list-disc list-inside bg-white p-4 rounded shadow-md">
           {teams.map((team, index) => (
-            <li key={index} className="text-gray-800">
-              {team.name} - {team.clueno}
+            <li key={index} className="text-gray-800 flex flex-row w-full items-center justify-between">
+              <div>Team <strong>{team.name}</strong> | Cred: <code>{team.credential}</code></div>
+              <div>{team.clueno}</div>
             </li>
           ))}
         </ul>
@@ -112,17 +122,19 @@ export default function Dashboard() {
       {track && (
         <>
           <h3 className="text-lg font-semibold text-gray-700 mt-6">
-            Start/Stop Track {track.toUpperCase()}
+            Start/Stop <strong>{trackMap[track]}</strong> Track
           </h3>
           <div className="space-x-4 mt-4">
             <button
               className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+              disabled={!stopped}
               onClick={startTrack}
             >
               Start Track
             </button>
             <button
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition "
+              disabled={stopped}
               onClick={stopTrack}
             >
               Stop Track

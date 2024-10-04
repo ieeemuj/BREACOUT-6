@@ -67,27 +67,27 @@ export default function Dashboard() {
       <h2 className="text-xl font-semibold text-gray-700 mb-4">
         Select a Track
       </h2>
-      <div className="space-x-4 mb-6 ">
+      <div className=" mb-6 ">
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mb-2 mx-3"
           onClick={() => fetchTeams("gr")}
         >
           Get Teams for Track GR
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mb-2 mx-3"
           onClick={() => fetchTeams("hu")}
         >
           Get Teams for Track HU
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mb-2 mx-3"
           onClick={() => fetchTeams("sl")}
         >
           Get Teams for Track SL
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition mb-2 mx-3"
           onClick={() => fetchTeams("re")}
         >
           Get Teams for Track RE
@@ -103,7 +103,7 @@ export default function Dashboard() {
         <ul className="list-disc list-inside bg-white p-4 rounded shadow-md">
           {teams.map((team, index) => (
             <li key={index} className="text-gray-800">
-              {team.name} - {team.clueno}
+              {team.name} - On Clue no {team.clueno}
             </li>
           ))}
         </ul>

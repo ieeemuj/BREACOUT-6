@@ -51,12 +51,20 @@ const ThemePages = () => {
   const [countdown, setCountdown] = useState(0);
   const router = useRouter();
 
-  useEffect(() => {
+  useEffect(async() => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/";
     }
 
+    const res = await get('/clue');
+    if (res.success) {
+      localStorage.setItem("clue", JSON.stringify(res.data.clue));
+    } else {
+      alert('Session expired! Please login again.');
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    }
     const team = JSON.parse(localStorage.getItem("team"));
     const clue = JSON.parse(localStorage.getItem("clue"));
     const theme = themeData[team.track];

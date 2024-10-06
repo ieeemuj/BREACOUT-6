@@ -140,12 +140,17 @@ router.post('/clue', async(req, res, next) => {
     return res.status(400).json({success: false, message: "Track, clueno and clue are required"});
   }
 
+  const coordinate1 = co1.map(x => x.toString());
+  const coordinate2 = co2.map(x => x.toString());
+  const coordinate3 = co3.map(x => x.toString());
+  const coordinate4 = co4.map(x => x.toString());
+
   const geolocation = await prisma.geolocations.create({
     data: {
-      coordinate1: co1,
-      coordinate2: co2,
-      coordinate3: co3,
-      coordinate4: co4,
+      coordinate1,
+      coordinate2,
+      coordinate3,
+      coordinate4,
     }
   });
 

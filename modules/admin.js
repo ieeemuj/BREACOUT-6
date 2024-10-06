@@ -159,6 +159,7 @@ router.post('/clue', async(req, res, next) => {
       track,
       clueno,
       clue,
+      name: `${track} Clue ${clueno}`,
       location: {
         connect: {
           id: geolocation.id

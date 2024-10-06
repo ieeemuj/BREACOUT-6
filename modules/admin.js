@@ -129,4 +129,40 @@ router.post('/new', async(req, res, next) => {
   res.json({success: true, data: { team }});
 });
 
+router.post('/clue', async(req, res, next) => {
+  const admin = await checkAdmin(req);
+  if (!admin) {
+    return res.status(401).json({success: false, message: "Unauthorized"});
+  }
+
+  const { track, clueno, clue, co1, co2, co3, co4 } = req.body;
+  if (!track || !clueno || !clue) {
+    return res.status(400).json({success: false, message: "Track, clueno and clue are required"});
+  }
+
+  const geolocation = await prisma.geolocations.create({
+    data: {
+      coordinate1: co1,
+      coordinate2: co2,
+      coordinate3: co3,
+      coordinate4: co4,
+    }
+  });
+
+  const newClue = await prisma.clues.create({
+    data: {
+      track,
+      clueno,
+      clue,
+      geolocation: {
+        connect: {
+          id: geolocation.id
+        }
+      }
+    }
+  });
+
+  res.json({success: true, data: { clue: newClue, geolocation }});
+});
+
 export default router;

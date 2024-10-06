@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 
   jwt.verify(token.split(' ')[1], process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({success: false, message: "Invalid token"});
+      return res.status(403).json({success: false, message: "Session expired! Please login again.", code: 1000});
     }
     req.team = decoded;
   });

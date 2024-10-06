@@ -79,6 +79,15 @@ router.post('/submit', async(req, res, next) => {
         return res.json({success: true, message: "Congratulations! You have completed the treasure hunt", correctLocation});
     }
 
+    await prisma.teamLogins.update({
+        where: {
+            id: team.id,
+        },
+        data: {
+            clueno: team.clueno + 1,
+        }
+    });
+
     console.log(clue);
     res.json({success: true, message: "Correct location", clue: nextClue, correctLocation});
 });

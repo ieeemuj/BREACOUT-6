@@ -58,7 +58,7 @@ const ThemePages = () => {
       window.location.href = "/";
     }
     async function getClue() {
-      const res = await get('/clue');
+      const res = await get('clue');
       if (res.success) {
         localStorage.setItem("clue", JSON.stringify(res.data.clue));
       } else {

@@ -50,6 +50,7 @@ const ThemePages = () => {
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
+  const [finished, setFinished] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -108,6 +109,9 @@ const ThemePages = () => {
           console.log(res);
           if (res.success) {
             localStorage.setItem("clue", JSON.stringify(res.clue));
+            if (res.code === 2000) {
+              setFinished(true);
+            }
             setClue(res.clue);
             alert('Correct location! Next clue unlocked.');
           } else {
@@ -185,7 +189,7 @@ const ThemePages = () => {
       </div>
 
       {/* Check location */}
-      <div className="mt-10">
+      <div className={`mt-10 ${finished ? 'hidden' : 'block'}`}>
         <button
           className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} 
           whitespace-nowrap cursor-pointer ${(countdown > 0 || loading) ? 'disabled:opacity-70' : ''} mb-20`}

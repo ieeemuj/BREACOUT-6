@@ -96,6 +96,7 @@ const ThemePages = () => {
           if (res.success) {
             localStorage.setItem("clue", JSON.stringify(res.clue));
             setClue(res.clue);
+            alert('Correct location! Next clue unlocked.');
           } else {
             alert(res.message);
           }

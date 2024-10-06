@@ -195,8 +195,9 @@ export default function Dashboard() {
         ) : teams.length > 0 ? (
           <ul className="list-disc list-inside bg-white p-4 rounded shadow-md">
             {teams.map((team, index) => (
-              <li key={index} className="text-gray-800">
-                {team.name} - On Clue no {team.clueno}
+              <li key={index} className="flex flex-row items-center justify-between w-full text-gray-800">
+                <div>Team {team.name} : <code>{team.credential}</code></div>
+                <div>{team.clueno}</div>
               </li>
             ))}
           </ul>

@@ -49,8 +49,6 @@ const Home = () => {
         setLoading(false);
         return alert("Wrong credentials, please try again.");
       }
-  
-     
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("team", JSON.stringify(data.data.team));
       localStorage.setItem("clue", JSON.stringify(data.data.clue));

@@ -52,7 +52,7 @@ const LoginForm = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="mt-2 block w-full  rounded-md shadow-sm  p-2"
+            className="mt-2 block w-full text-black rounded-md shadow-sm  p-2"
           />
         </div>
         <div className="mb-6 w-full">
@@ -68,7 +68,7 @@ const LoginForm = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-2 block w-full rounded-md shadow-sm  p-2"
+            className="mt-2 block w-full text-black rounded-md shadow-sm  p-2"
           />
         </div>
         <button

@@ -22,7 +22,7 @@ router.get('/', async(req, res, next) => {
         }
     });
     if (clue) {
-        res.json(clue);
+        res.json({ success: true, data: { clue } });
     } else {
         res.status(404).json({success: false, message: "Clue not found"});
     }

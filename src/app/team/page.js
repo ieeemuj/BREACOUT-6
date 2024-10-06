@@ -176,7 +176,7 @@ const ThemePages = () => {
       <div className="mt-10">
         <button
           className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} 
-          whitespace-nowrap cursor-pointer ${(countdown > 0 || loading) ? 'disabled:opacity-70' : ''}`}
+          whitespace-nowrap cursor-pointer ${(countdown > 0 || loading) ? 'disabled:opacity-70' : ''} mb-20`}
           onClick={loading ? null : checkLocation}
           disabled={countdown > 0 || loading}
         >

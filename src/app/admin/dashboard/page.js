@@ -227,7 +227,7 @@ export default function Dashboard() {
               Stop Track
             </button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

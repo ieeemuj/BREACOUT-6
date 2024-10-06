@@ -68,6 +68,10 @@ router.post('/submit', async(req, res, next) => {
         return res.json({success: false, message: "You are not at the correct location"});
     }
 
+    if (team.clueno === 5) {
+        return res.json({ success: true, clue: { clue: 'Welcome to Triwizard Tournament! Report to Old Mess to continue.', clueno: 6 }, code: 2000 })
+    }
+
     const nextClue = await prisma.clues.findFirst({
         where: {
             track: team.track,
@@ -89,7 +93,7 @@ router.post('/submit', async(req, res, next) => {
     });
 
     console.log(clue);
-    res.json({success: true, message: "Correct location", clue: nextClue, correctLocation});
+    res.json({success: true, clue: nextClue });
 });
 
 export default router;

@@ -4,6 +4,13 @@ import { get, post } from "@/app/service";
 import { useState } from "react";
 import Modal from "./modal";
 
+const trackMap = {
+  gr: "Gryffindor",
+  hu: "Hufflepuff",
+  sl: "Slytherin",
+  re: "Ravenclaw",
+}
+
 export default function Dashboard() {
   const [track, setTrack] = useState("");
   const [teams, setTeams] = useState([]);
@@ -12,6 +19,7 @@ export default function Dashboard() {
   const [teamName, setTeamName] = useState("");
   const [teamTrack, setTeamTrack] = useState("");
   const [response, setResponse] = useState(null);
+  const [stopped, setStopped] = useState(false);
 
   // Fetch teams
   const fetchTeams = async (selectedTrack) => {
@@ -24,6 +32,7 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       const data = await get(`admin/teams?track=${selectedTrack}`);
+      const stopped = !!data[0]?.stopped;
       setTeams(data);
       setTrack(selectedTrack);
     } catch (error) {
@@ -198,19 +207,21 @@ export default function Dashboard() {
 
       {/* Start/Stop Track */}
       {track && (
-        <div className="bg-white p-6 shadow rounded-lg mt-8">
-          <h3 className="text-xl font-semibold text-gray-700 mb-4">
-            Start/Stop Track {track.toUpperCase()}
+        <>
+          <h3 className="text-lg font-semibold text-gray-700 mt-6">
+            Start/Stop <strong>{trackMap[track]}</strong> Track
           </h3>
           <div className="flex gap-4">
             <button
-              className="bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600 transition"
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+              disabled={!stopped}
               onClick={startTrack}
             >
               Start Track
             </button>
             <button
-              className="bg-red-500 text-white px-6 py-3 rounded hover:bg-red-600 transition"
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition "
+              disabled={stopped}
               onClick={stopTrack}
             >
               Stop Track

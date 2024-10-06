@@ -159,7 +159,7 @@ router.post('/clue', async(req, res, next) => {
       track,
       clueno,
       clue,
-      geolocation: {
+      location: {
         connect: {
           id: geolocation.id
         }

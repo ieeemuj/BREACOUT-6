@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { post } from "../service";
 import {useRouter} from "next/navigation";
+import { get } from "../service";
 
 const themeData = {
   gr: {
@@ -51,27 +52,30 @@ const ThemePages = () => {
   const [countdown, setCountdown] = useState(0);
   const router = useRouter();
 
-  useEffect(async() => {
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/";
     }
-
-    const res = await get('/clue');
-    if (res.success) {
-      localStorage.setItem("clue", JSON.stringify(res.data.clue));
-    } else {
-      alert('Session expired! Please login again.');
-      localStorage.removeItem("token");
-      window.location.href = "/";
+    async function getClue() {
+      const res = await get('/clue');
+      if (res.success) {
+        localStorage.setItem("clue", JSON.stringify(res.data.clue));
+      } else {
+        alert('Session expired! Please login again.');
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }
+      const team = JSON.parse(localStorage.getItem("team"));
+      const clue = JSON.parse(localStorage.getItem("clue"));
+      const theme = themeData[team.track];
+      setTeam(team);
+      setClue(clue);
+      setTheme(theme);
+      setRendering(false);
     }
-    const team = JSON.parse(localStorage.getItem("team"));
-    const clue = JSON.parse(localStorage.getItem("clue"));
-    const theme = themeData[team.track];
-    setTeam(team);
-    setClue(clue);
-    setTheme(theme);
-    setRendering(false);
+
+    getClue();
   }, []);
 
   useEffect(() => {

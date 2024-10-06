@@ -13,21 +13,6 @@ router.get('/all', async (req, res) => {
     res.json(teams);
 });
 
-router.post('/new', async (req, res) => {
-    const { name, credential, track, auth } = req.body;
-    if (auth !== process.env.SECRET) {
-        return res.status(403).json({success: false, message: "Invalid auth"});
-    }
-    const team = await prisma.teamLogins.create({
-        data: {
-            name,
-            track,
-            credential
-        }
-    });
-    res.json(team);
-});
-
 router.post('/login', async (req, res) => {
     const { credential } = req.body;
     if (!credential) {
@@ -42,7 +27,7 @@ router.post('/login', async (req, res) => {
     if (!team) {
         return res.status(404).json({success: false, message: "Team not found"});
     }
-    
+
     const token = jwt.sign({ id: team.id }, process.env.JWT_SECRET);
     const clue = await prisma.clues.findFirst({
         where: {

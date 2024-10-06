@@ -18,7 +18,7 @@ model TeamLogins {
   track      String
   name       String
   credential String  @unique
-  clueno     Int
+  clueno     Int     @default(1)
   stopped    Boolean @default(false)
 }
 

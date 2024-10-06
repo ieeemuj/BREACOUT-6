@@ -3,6 +3,11 @@ import { Router } from 'express';
 
 const router = Router();
 
+function generateCredential() {
+  // generate a random 8 character string
+  return Math.random().toString(36).substring(2, 10);
+}
+
 router.post('/login', async(req, res, next) => {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -98,5 +103,30 @@ router.post('/start', async(req, res, next) => {
   res.json({success: true});
 });
 
+router.post('/new', async(req, res, next) => {
+  const admin = await checkAdmin(req);
+  if (!admin) {
+    return res.status(401).json({success: false, message: "Unauthorized"});
+  }
+
+  const { track, name } = req.body;
+  if (!track || !name) {
+    return res.status(400).json({success: false, message: "Track and name are required"});
+  }
+
+  if (!["gr", "hu", "re", "sl"].includes(track)) {
+    return res.status(400).json({success: false, message: "Invalid track"});
+  }
+  const credential = generateCredential();
+  const team = await prisma.teamLogins.create({
+    data: {
+      track,
+      name,
+      credential,
+    }
+  });
+
+  res.json({success: true, data: { team }});
+});
 
 export default router;

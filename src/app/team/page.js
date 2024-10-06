@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { post } from "../service";
-import { useRouter } from "next/router";
+import {useRouter} from "next/navigation";
 
 const themeData = {
   gr: {
@@ -49,6 +49,7 @@ const ThemePages = () => {
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -99,6 +100,9 @@ const ThemePages = () => {
             alert('Correct location! Next clue unlocked.');
           } else {
             alert(res.message);
+            if (res.code === 1000) {
+              router.push("/");
+            }
           }
           setCountdown(10);
           setLoading(false);

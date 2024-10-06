@@ -61,6 +61,9 @@ const ThemePages = () => {
     async function getClue() {
       const res = await get('clue');
       if (res.success) {
+        if (res.code === 2000) {
+          setFinished(true);
+        }
         localStorage.setItem("clue", JSON.stringify(res.data.clue));
       } else {
         alert('Session expired! Please login again.');

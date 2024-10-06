@@ -34,7 +34,7 @@ model Geolocations {
 model Clues {
   id             String       @id @default(uuid())
   track          String
-  name           String
+  name           String?
   clue           String
   location       Geolocations @relation(fields: [geolocationsId], references: [id])
   geolocationsId String

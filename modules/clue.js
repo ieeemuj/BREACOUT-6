@@ -46,7 +46,7 @@ router.post('/submit', async(req, res, next) => {
     }
 
     if (team.stopped) {
-        return res.json({success: false, message: "Your track is stopped. Please contact the organizers."});
+        return res.json({success: false, message: "Another team has already completed the treasure hunt. Report back to Old Mess."});
     }
 
     const clue = await prisma.clues.findFirst({

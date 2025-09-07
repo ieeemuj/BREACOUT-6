@@ -1,5 +1,5 @@
 import prisma from "../utils/database.js";
-import { Router } from 'express';
+import {Router} from 'express';
 
 const router = Router();
 
@@ -8,27 +8,27 @@ function generateCredential() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-router.post('/login', async(req, res, next) => {
-    const { username, password } = req.body;
-    if (!username || !password) {
-        return res.status(400).json({success: false, message: "Username and password are required"});
+router.post('/login', async (req, res, next) => {
+  const {username, password} = req.body;
+  if (!username || !password) {
+    return res.status(400).json({success: false, message: "Username and password are required"});
+  }
+
+  const admin = await prisma.admins.findFirst({
+    where: {
+      username,
+      password
     }
+  });
 
-    const admin = await prisma.admins.findFirst({
-        where: {
-            username,
-            password
-        }
-    });
+  if (!admin) {
+    return res.status(404).json({success: false, message: "Admin not found"});
+  }
 
-    if (!admin) {
-        return res.status(404).json({success: false, message: "Admin not found"});
-    }
-
-    res.json({
-        success: true,
-        data: admin
-    });
+  res.json({
+    success: true,
+    data: admin
+  });
 });
 
 async function checkAdmin(req) {
@@ -48,7 +48,7 @@ async function checkAdmin(req) {
   return !!admin;
 }
 
-router.get('/teams', async(req, res, next) => {
+router.get('/teams', async (req, res, next) => {
   const admin = await checkAdmin(req);
   if (!admin) {
     return res.status(401).json({success: false, message: "Unauthorized"});
@@ -65,13 +65,13 @@ router.get('/teams', async(req, res, next) => {
   res.json(teams);
 });
 
-router.post('/stop', async(req, res, next) => {
+router.post('/stop', async (req, res, next) => {
   const admin = await checkAdmin(req);
   if (!admin) {
     return res.status(401).json({success: false, message: "Unauthorized"});
   }
 
-  const { track } = req.body;
+  const {track} = req.body;
   const team = await prisma.teamLogins.updateMany({
     where: {
       track: track,
@@ -84,13 +84,13 @@ router.post('/stop', async(req, res, next) => {
   res.json({success: true});
 });
 
-router.post('/start', async(req, res, next) => {
+router.post('/start', async (req, res, next) => {
   const admin = await checkAdmin(req);
   if (!admin) {
     return res.status(401).json({success: false, message: "Unauthorized"});
   }
 
-  const { track } = req.body;
+  const {track} = req.body;
   const team = await prisma.teamLogins.updateMany({
     where: {
       track: track,
@@ -103,13 +103,13 @@ router.post('/start', async(req, res, next) => {
   res.json({success: true});
 });
 
-router.post('/new', async(req, res, next) => {
+router.post('/new', async (req, res, next) => {
   const admin = await checkAdmin(req);
   if (!admin) {
     return res.status(401).json({success: false, message: "Unauthorized"});
   }
 
-  const { track, name } = req.body;
+  const {track, name} = req.body;
   if (!track || !name) {
     return res.status(400).json({success: false, message: "Track and name are required"});
   }
@@ -126,17 +126,17 @@ router.post('/new', async(req, res, next) => {
     }
   });
 
-  res.json({success: true, data: { team }});
+  res.json({success: true, data: {team}});
 });
 
-router.post('/clue', async(req, res, next) => {
+router.post('/clue', async (req, res, next) => {
   const admin = await checkAdmin(req);
   if (!admin) {
     return res.status(401).json({success: false, message: "Unauthorized"});
   }
 
-  const { track, clueno, clue, co1, co2, co3, co4 } = req.body;
-  if (!track || !clueno || !clue) {
+  const {track, clueno, clue, co1, co2, co3, co4, name} = req.body;
+  if (!track || !clueno || !clue || !name) {
     return res.status(400).json({success: false, message: "Track, clueno and clue are required"});
   }
 
@@ -145,15 +145,6 @@ router.post('/clue', async(req, res, next) => {
   const coordinate3 = co3.map(x => x.toString());
   const coordinate4 = co4.map(x => x.toString());
 
-  const geolocation = await prisma.geolocations.create({
-    data: {
-      coordinate1,
-      coordinate2,
-      coordinate3,
-      coordinate4,
-    }
-  });
-
   const newClue = await prisma.clues.create({
     data: {
       track,
@@ -161,14 +152,20 @@ router.post('/clue', async(req, res, next) => {
       clue,
       name: `${track} Clue ${clueno}`,
       location: {
-        connect: {
-          id: geolocation.id
+        create: {
+          data: {
+            coordinate1,
+            coordinate2,
+            coordinate3,
+            coordinate4,
+            name,
+          }
         }
       }
     }
   });
 
-  res.json({success: true, data: { clue: newClue, geolocation }});
+  res.json({success: true, data: newClue});
 });
 
 export default router;

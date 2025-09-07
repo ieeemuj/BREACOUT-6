@@ -69,7 +69,7 @@ router.post('/submit', async(req, res, next) => {
     }
 
     if (team.clueno === 5) {
-        return res.json({ success: true, clue: { clue: 'Welcome to Triwizard Tournament! Report to Old Mess to continue.', clueno: 6 }, code: 2000 })
+        return res.json({ success: true, clue: { clue: 'Welcome to Round 2! Report to Old Mess to continue.', clueno: 6 }, code: 2000 })
     }
 
     const nextClue = await prisma.clues.findFirst({

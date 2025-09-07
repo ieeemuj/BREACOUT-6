@@ -153,12 +153,10 @@ router.post('/clue', async (req, res, next) => {
       name: `${track} Clue ${clueno}`,
       location: {
         create: {
-          data: {
-            coordinate1,
-            coordinate2,
-            coordinate3,
-            coordinate4,
-          }
+          coordinate1,
+          coordinate2,
+          coordinate3,
+          coordinate4,
         }
       }
     }

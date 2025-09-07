@@ -6,7 +6,7 @@
     "build": "echo 'Nothing'",
     "dev": "npx ts-node app.js",
     "start": "node app.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && prisma migrate deploy"
   },
   "keywords": [],
   "author": "",

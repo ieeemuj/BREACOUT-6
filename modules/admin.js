@@ -135,8 +135,8 @@ router.post('/clue', async (req, res, next) => {
     return res.status(401).json({success: false, message: "Unauthorized"});
   }
 
-  const {track, clueno, clue, co1, co2, co3, co4, name} = req.body;
-  if (!track || !clueno || !clue || !name) {
+  const {track, clueno, clue, co1, co2, co3, co4} = req.body;
+  if (!track || !clueno || !clue) {
     return res.status(400).json({success: false, message: "Track, clueno and clue are required"});
   }
 
@@ -158,7 +158,6 @@ router.post('/clue', async (req, res, next) => {
             coordinate2,
             coordinate3,
             coordinate4,
-            name,
           }
         }
       }

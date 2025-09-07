@@ -7,35 +7,35 @@ import { get } from "../service";
 const themeData = {
   gr: {
     image:
-      "https://images.prismic.io/ieeemuj/ZvUbArVsGrYSwBTC_gryffindor.png?auto=format,compress",
+      "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#501D27]",
     borderColor: "border-[#D37E01]",
     logo: "/g-1.png",
-    name: "Gryffindor",
+    name: "Track #1",
   },
   hu: {
     image:
-      "https://images.prismic.io/ieeemuj/ZvUbD7VsGrYSwBTD_hufflepuff.png?auto=format,compress",
+      "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#D37E01]",
     borderColor: "border-[#D37E01]",
     logo: "/h-1.png",
-    name: "Hufflepuff",
+    name: "Track #2",
   },
   re: {
     image:
-      "https://images.prismic.io/ieeemuj/ZvUbIbVsGrYSwBTG_ravenclaw.png?auto=format,compress",
+      "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
     borderColor: "border-[#D37E01]",
     logo: "/r-1.png",
-    name: "Ravenclaw",
+    name: "Track #3",
   },
   sl: {
     image:
-      "https://images.prismic.io/ieeemuj/ZvUa5bVsGrYSwBS-_slytherin.png?auto=format,compress",
+      "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#134731]",
     borderColor: "border-[#D37E01]",
     logo: "/s-1.png",
-    name: "Slytherin",
+    name: "Track #4",
   },
 };
 
@@ -163,7 +163,7 @@ const ThemePages = () => {
     >
       {/* logo and name */}
       <div className="flex flex-col justify-center items-center">
-        <img src={theme.logo} alt="Theme logo" className="w-40 h-40" />
+        {/*<img src={theme.logo} alt="Theme logo" className="w-40 h-40" />*/}
         <div className="pt-10">
           <p
             className={`font-bold text-3xl text-center font-geist-sans text-[#D37E01]`}

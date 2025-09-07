@@ -1,10 +1,11 @@
 "use client"
-import React, { useState, useEffect, useRef } from 'react';
-import { Alert, Button, Spinner } from "flowbite-react";
-import { useRouter } from "next/navigation";
-import { FaArrowRight } from "react-icons/fa6";
-import { get, post } from "./service";
+import React, {useEffect, useRef, useState} from 'react';
+import {Alert, Button, Spinner} from "flowbite-react";
+import {useRouter} from "next/navigation";
+import {FaArrowRight} from "react-icons/fa6";
+import {post} from "./service";
 import Image from "next/image";
+import BgImage from "../../public/bg.svg";
 
 const Home = () => {
   const [formData, setFormData] = useState({});
@@ -24,26 +25,26 @@ const Home = () => {
   ];
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+    setFormData({...formData, [e.target.id]: e.target.value.trim()});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!formData.credential) {
       return setErrorMessage("Please fill all the details.");
     }
-  
+
     try {
       setLoading(true);
       setErrorMessage(null);
-  
+
       const data = await post("team/login", {
         credential: formData.credential
       });
-  
+
       console.log(data);
-  
+
       // Check if login was unsuccessful and show an alert
       if (!data.success) {
         setLoading(false);
@@ -52,9 +53,9 @@ const Home = () => {
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("team", JSON.stringify(data.data.team));
       localStorage.setItem("clue", JSON.stringify(data.data.clue));
-  
+
       setLoading(false);
-  
+
       // Randomly select and expand an image
       const selectedImageIndex = Math.floor(Math.random() * images.length);
       expandImage(selectedImageIndex);
@@ -63,7 +64,7 @@ const Home = () => {
       setLoading(false);
     }
   };
-  
+
 
   const expandImage = (index) => {
     setExpandedImage(index);
@@ -101,28 +102,23 @@ const Home = () => {
 
   return (
     <div className="h-screen w-full relative" ref={containerRef}>
-      <div className="h-screen grid grid-cols-4">
-        {images.map((src, index) => (
-          <div key={index} className="h-full object-contain">
-            <Image
-              ref={el => imageRefs.current[index] = el}
-              className="h-full w-screen"
-              src={src}
-              alt={`Image ${index + 1}`}
-              width={200}
-              height={500}
-              quality={60}
-            />
-          </div>
-        ))}
+      <div className="h-screen absolute">
+        <Image
+          className="w-screen"
+          src={BgImage}
+          alt={`Image`}
+          width={200}
+          height={500}
+          quality={60}
+        />
       </div>
       <div className="absolute inset-0 flex flex-col justify-center items-center ">
-        <div>
+        <div className="text-white">
           <h1 className="font-bold text-center">
             <span className="text-2xl">WELCOME TO</span>
             <br/>
-            <br />
-            <span className="text-4xl font-astrolab">BREACOUT</span>
+            <br/>
+            <span className="text-7xl font-astrolab">BREACOUT</span>
           </h1>
         </div>
         <div>
@@ -150,12 +146,13 @@ const Home = () => {
             >
               {loading ? (
                 <div className="">
-                  <Spinner size="sm" />
+                  <Spinner size="sm"/>
                   <span>Loading</span>
                 </div>
               ) : (
-                <span className="font-bold text-xl border-2 px-6 py-2 rounded-2xl backdrop-blur-lg bg-white/30 border-white">
-                  <FaArrowRight />
+                <span
+                  className="font-bold text-xl border-2 px-6 py-2 rounded-2xl backdrop-blur-lg bg-white/30 border-white">
+                  <FaArrowRight/>
                 </span>
               )}
             </Button>

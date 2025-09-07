@@ -28,6 +28,7 @@ model Geolocations {
   coordinate2 String[]
   coordinate3 String[]
   coordinate4 String[]
+  name        String   @unique
   Clues       Clues[]
 }
 

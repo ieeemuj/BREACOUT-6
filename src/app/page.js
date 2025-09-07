@@ -36,8 +36,8 @@ const Home = () => {
     }
 
     try {
-      // alert('Breacout 6.0 has not started yet. Stay tuned for updates!');
-      // return;
+      alert('Breacout 6.0 has not started yet. Stay tuned for updates!');
+      return;
       setLoading(true);
       setErrorMessage(null);
 

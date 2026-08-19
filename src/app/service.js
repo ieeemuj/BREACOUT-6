@@ -1,5 +1,4 @@
-const BASE_URL = 'https://breacout-backend.vercel.app';
-// const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 function get(path) {
   return fetch(`${BASE_URL}/${path}`, {
@@ -12,6 +11,8 @@ function get(path) {
 }
 
 function post(path, data) {
+
+  console.log("BASE_URL:", BASE_URL);
   return fetch(`${BASE_URL}/${path}`, {
     method: 'POST',
     headers: {
@@ -19,7 +20,19 @@ function post(path, data) {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
     body: JSON.stringify(data),
-  }).then((response) => response.json())
+  }).then(async (response) => {
+    const text = await response.text();
+
+    console.log("STATUS:", response.status);
+    console.log("URL:", response.url);
+    console.log("RESPONSE:", text);
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
+    }
+  });
 }
 
 export {get , post}

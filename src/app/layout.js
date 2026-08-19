@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "Breacout",
-  description: "Breacout Genesis 4.0",
+  description: "Breacout Genesis 6.0",
   icons: {
     icon: "/favicon.ico", 
   },

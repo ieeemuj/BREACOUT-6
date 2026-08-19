@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { post } from "../service";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { get } from "../service";
 
 const themeData = {
@@ -100,14 +100,19 @@ const ThemePages = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async function (position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
           setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+            lat,
+            lng,
           });
-          console.log(userLocation);
+
+          console.log("GPS location:", lat, lng);
+
           const res = await post("clue/submit", {
-            lat: userLocation.lat,
-            lan: userLocation.lng,
+            lat,
+            lan: lng,
           });
           console.log(res);
           if (res.success) {

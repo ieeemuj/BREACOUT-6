@@ -5,7 +5,7 @@ import { post, get } from "../service";
 import { useRouter } from "next/navigation";
 
 const themeData = {
-  a: {
+  "1": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#501D27]",
@@ -13,7 +13,7 @@ const themeData = {
     name: "Path A: The Citadel",
   },
 
-  b: {
+  "2": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#4A2C14]",
@@ -21,7 +21,7 @@ const themeData = {
     name: "Path B: The Sovereign",
   },
 
-  c: {
+  "3": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
@@ -29,7 +29,7 @@ const themeData = {
     name: "Path C: The Nexus",
   },
 
-  d: {
+  "4": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#134731]",
@@ -45,10 +45,21 @@ const ThemePages = () => {
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
+
   const [finished, setFinished] = useState(false);
+  const [qualified, setQualified] = useState(false);
+  const [finalTitle, setFinalTitle] = useState("");
+  const [finalMessage, setFinalMessage] = useState("");
+
   const [message, setMessage] = useState(null);
 
   const router = useRouter();
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD CURRENT JOURNEY
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -73,26 +84,12 @@ const ThemePages = () => {
           return;
         }
 
-        if (res.code === 2000) {
-          setFinished(true);
-        }
-
-        if (res.data?.clue) {
-          localStorage.setItem(
-            "clue",
-            JSON.stringify(res.data.clue)
-          );
-        }
-
         const storedTeam = JSON.parse(
           localStorage.getItem("team") || "{}"
         );
 
-        const currentClue = res.data?.clue ||
-          JSON.parse(localStorage.getItem("clue") || "{}");
-
         const currentTheme =
-          themeData[String(storedTeam.track).toLowerCase()];
+          themeData[String(storedTeam.track)];
 
         if (!currentTheme) {
           console.error(
@@ -105,19 +102,64 @@ const ThemePages = () => {
             text: `Invalid path: ${storedTeam.track}`,
           });
 
-          setRendering(false);
           return;
         }
 
         setTeam(storedTeam);
-        setClue(currentClue);
         setTheme(currentTheme);
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMPLETED JOURNEY
+        |--------------------------------------------------------------------------
+        */
+
+        if (res.completed || res.code === 2000) {
+          setFinished(true);
+
+          setQualified(
+            Boolean(res.data?.qualified)
+          );
+
+          setFinalTitle(
+            res.data?.finalTitle || "Path Complete"
+          );
+
+          setFinalMessage(
+            res.data?.finalMessage ||
+            res.message ||
+            "You have completed your path. Report to the final common location."
+          );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CURRENT CLUE
+        |--------------------------------------------------------------------------
+        */
+
+        if (res.data?.clue) {
+          setClue(res.data.clue);
+
+          localStorage.setItem(
+            "clue",
+            JSON.stringify(res.data.clue)
+          );
+        } else {
+          const savedClue = JSON.parse(
+            localStorage.getItem("clue") || "{}"
+          );
+
+          setClue(savedClue);
+        }
       } catch (error) {
         console.error("Error loading clue:", error);
 
         setMessage({
           type: "error",
-          text: "Unable to load your current clue.",
+          text: "Unable to load your current journey.",
         });
       } finally {
         setRendering(false);
@@ -126,6 +168,12 @@ const ThemePages = () => {
 
     getClue();
   }, [router]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | COUNTDOWN
+  |--------------------------------------------------------------------------
+  */
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -144,6 +192,12 @@ const ThemePages = () => {
     return () => clearInterval(interval);
   }, [countdown]);
 
+  /*
+  |--------------------------------------------------------------------------
+  | MESSAGE POPUP
+  |--------------------------------------------------------------------------
+  */
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
 
@@ -151,6 +205,12 @@ const ThemePages = () => {
       setMessage(null);
     }, 3500);
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CHECK LOCATION
+  |--------------------------------------------------------------------------
+  */
 
   async function checkLocation() {
     setLoading(true);
@@ -180,15 +240,56 @@ const ThemePages = () => {
 
           console.log("SUBMIT RESPONSE:", res);
 
+          /*
+          |--------------------------------------------------------------------------
+          | CORRECT LOCATION
+          |--------------------------------------------------------------------------
+          */
+
           if (res.success) {
             /*
-              Support both possible backend response formats:
-              res.data.clue
-              OR
-              res.clue
+            |--------------------------------------------------------------------------
+            | JOURNEY FINISHED
+            |--------------------------------------------------------------------------
             */
+
+            if (res.completed || res.code === 2000) {
+              setFinished(true);
+
+              setQualified(
+                Boolean(res.data?.qualified)
+              );
+
+              setFinalTitle(
+                res.data?.finalTitle ||
+                "Path Complete"
+              );
+
+              setFinalMessage(
+                res.data?.finalMessage ||
+                res.message ||
+                "You have completed your path. Report to the final common location."
+              );
+
+              showMessage(
+                "success",
+                res.message ||
+                "Congratulations! You have completed your path."
+              );
+
+              localStorage.removeItem("clue");
+
+              return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | NEXT STORYLINE + CLUE
+            |--------------------------------------------------------------------------
+            */
+
             const nextClue =
-              res.data?.clue || res.clue;
+              res.data?.clue || res.clue || null;
 
             if (nextClue) {
               setClue(nextClue);
@@ -199,14 +300,10 @@ const ThemePages = () => {
               );
             }
 
-            if (res.code === 2000) {
-              setFinished(true);
-            }
-
             showMessage(
               "success",
               res.message ||
-              "Location verified! The next part of your journey has been unlocked."
+              "Correct location! The next part of your journey has been unlocked."
             );
           } else {
             showMessage(
@@ -225,10 +322,11 @@ const ThemePages = () => {
               }, 2000);
             }
           }
-
-          setCountdown(10);
         } catch (error) {
-          console.error("Location submission error:", error);
+          console.error(
+            "Location submission error:",
+            error
+          );
 
           showMessage(
             "error",
@@ -236,6 +334,7 @@ const ThemePages = () => {
             "Something went wrong while checking your location."
           );
         } finally {
+          setCountdown(10);
           setLoading(false);
         }
       },
@@ -276,6 +375,12 @@ const ThemePages = () => {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | LOADING SCREEN
+  |--------------------------------------------------------------------------
+  */
+
   if (rendering) {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-black">
@@ -286,6 +391,12 @@ const ThemePages = () => {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | PAGE
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <div
       className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor} custom-font px-4`}
@@ -294,6 +405,7 @@ const ThemePages = () => {
       }}
     >
       {/* SUCCESS / ERROR MESSAGE */}
+
       {message && (
         <div
           className={`
@@ -301,9 +413,10 @@ const ThemePages = () => {
             w-[90%] max-w-md px-6 py-4 rounded-2xl
             border-2 backdrop-blur-md shadow-2xl
             text-center font-geist-mono
-            ${message.type === "success"
-              ? "bg-green-900/90 border-green-400 text-green-100"
-              : "bg-red-950/90 border-red-400 text-red-100"
+            ${
+              message.type === "success"
+                ? "bg-green-900/90 border-green-400 text-green-100"
+                : "bg-red-950/90 border-red-400 text-red-100"
             }
           `}
         >
@@ -320,6 +433,7 @@ const ThemePages = () => {
       )}
 
       {/* TEAM NAME */}
+
       <div className="flex flex-col justify-center items-center mt-8">
         <p className="font-bold text-3xl text-center font-geist-sans text-[#D37E01]">
           Team
@@ -334,79 +448,107 @@ const ThemePages = () => {
         </p>
       </div>
 
-      {/* STORYLINE */}
-      {clue.storyline && (
-        <div className="flex justify-center items-center mt-10 w-full">
-          <div className="w-full max-w-xl rounded-2xl p-5 bg-black/50 border-2 border-white/20 backdrop-blur-md shadow-xl">
+      {/* FINISHED SCREEN */}
+
+      {finished ? (
+        <div className="flex justify-center items-center mt-10 mb-16 w-full">
+          <div className="w-full max-w-xl rounded-2xl p-7 bg-black/70 border-2 border-[#D37E01] backdrop-blur-md shadow-2xl">
+
             <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
-              The Story Continues
+              Journey Complete
             </p>
+
+            <h2 className="text-white text-center text-2xl md:text-3xl font-bold mb-5">
+              {finalTitle || "Path Complete"}
+            </h2>
 
             <p className="text-white text-center text-sm md:text-base font-geist-mono leading-relaxed whitespace-pre-line">
-              {clue.storyline}
+              {finalMessage}
+            </p>
+
+            <div
+              className={`mt-6 p-4 rounded-xl border text-center ${
+                qualified
+                  ? "bg-green-900/50 border-green-400 text-green-100"
+                  : "bg-[#D37E01]/10 border-[#D37E01] text-[#FFE2A8]"
+              }`}
+            >
+              <p className="font-bold">
+                {qualified
+                  ? "You are currently among the first four finishers!"
+                  : "Report to the final common location immediately."}
+              </p>
+            </div>
+
+            <p className="text-white/70 text-center text-xs mt-5 font-geist-mono">
+              The first four teams to reach the final common location
+              will qualify for the next round.
             </p>
           </div>
         </div>
-      )}
+      ) : (
+        <>
+          {/* STORYLINE */}
 
-      {/* Clue */}
-      <div className="flex justify-center items-center px-8 mt-6 w-full">
-        <div className="w-full max-w-2xl">
-          <div
-            className={`rounded-2xl p-6 ${theme.bgColor} border-4 ${theme.borderColor} shadow-xl`}
-          >
-            <p className="text-[#D37E01] text-xs font-geist-mono uppercase tracking-[0.2em] mb-3 text-center">
-              Your Clue
-            </p>
+          {clue.storyline && (
+            <div className="flex justify-center items-center mt-10 w-full">
+              <div className="w-full max-w-xl rounded-2xl p-5 bg-black/50 border-2 border-white/20 backdrop-blur-md shadow-xl">
+                <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
+                  The Story Continues
+                </p>
 
-            <p className="text-white text-center text-sm md:text-base leading-relaxed font-geist-mono select-none">
-              {clue.clue}
-            </p>
+                <p className="text-white text-center text-sm md:text-base font-geist-mono leading-relaxed whitespace-pre-line">
+                  {clue.storyline}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* CLUE */}
+
+          <div className="flex justify-center items-center px-4 mt-6 w-full">
+            <div className="w-full max-w-2xl">
+              <div
+                className={`rounded-2xl p-6 ${theme.bgColor} border-4 ${theme.borderColor} shadow-xl`}
+              >
+                <p className="text-[#D37E01] text-xs font-geist-mono uppercase tracking-[0.2em] mb-3 text-center">
+                  Your Clue
+                </p>
+
+                <p className="text-white text-center text-sm md:text-base leading-relaxed font-geist-mono select-none whitespace-pre-line">
+                  {clue.clue}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* FINISHED MESSAGE */}
-      {finished && (
-        <div className="flex justify-center items-center mt-8 w-full mb-10">
-          <div className="w-full max-w-xl rounded-2xl p-6 bg-[#D37E01]/20 border-2 border-[#D37E01] backdrop-blur-md shadow-xl">
-            <p className="text-[#D37E01] text-center text-xl font-bold mb-3">
-              Path Complete
-            </p>
+          {/* CHECK LOCATION */}
 
-            <p className="text-white text-center text-sm font-geist-mono leading-relaxed">
-              You have completed your path. Report to the final common location.
-              The first four teams to arrive will qualify for the next round.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* CHECK LOCATION */}
-      {!finished && (
-        <div className="mt-10 mb-16">
-          <button
-            className={`
-              rounded-2xl font-geist-mono
-              text-md py-3 px-8
-              border-4 ${theme.borderColor}
-              whitespace-nowrap
-              transition-all duration-200
-              ${countdown > 0 || loading
-                ? "opacity-70 cursor-not-allowed"
-                : "cursor-pointer hover:scale-105"
-              }
-            `}
-            onClick={checkLocation}
-            disabled={countdown > 0 || loading}
-          >
-            {loading
-              ? "Checking location..."
-              : countdown > 0
+          <div className="mt-10 mb-16">
+            <button
+              className={`
+                rounded-2xl font-geist-mono
+                text-md py-3 px-8
+                border-4 ${theme.borderColor}
+                whitespace-nowrap
+                transition-all duration-200
+                ${
+                  countdown > 0 || loading
+                    ? "opacity-70 cursor-not-allowed"
+                    : "cursor-pointer hover:scale-105"
+                }
+              `}
+              onClick={checkLocation}
+              disabled={countdown > 0 || loading}
+            >
+              {loading
+                ? "Checking location..."
+                : countdown > 0
                 ? `Please wait (${countdown})`
                 : "Check Location"}
-          </button>
-        </div>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

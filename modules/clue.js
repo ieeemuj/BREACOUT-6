@@ -6,6 +6,42 @@ const router = Router();
 
 /*
 |--------------------------------------------------------------------------
+| FINAL MESSAGES
+|--------------------------------------------------------------------------
+|
+| All tracks eventually report to the same final location.
+| You can change this text later without changing the logic.
+|
+*/
+
+const FINAL_MESSAGES = {
+  "1": {
+    title: "Path A: The Citadel",
+    message:
+      "You have completed Path A: The Citadel. Report immediately to the final gathering point. The first four teams to arrive will qualify for the next round.",
+  },
+
+  "2": {
+    title: "Path B: The Sovereign",
+    message:
+      "You have completed Path B: The Sovereign. Report immediately to the final gathering point. The first four teams to arrive will qualify for the next round.",
+  },
+
+  "3": {
+    title: "Path C: The Nexus",
+    message:
+      "You have completed Path C: The Nexus. Report immediately to the final gathering point. The first four teams to arrive will qualify for the next round.",
+  },
+
+  "4": {
+    title: "Path D: The Frontier",
+    message:
+      "You have completed Path D: The Frontier. Report immediately to the final gathering point. The first four teams to arrive will qualify for the next round.",
+  },
+};
+
+/*
+|--------------------------------------------------------------------------
 | GET CURRENT CLUE
 |--------------------------------------------------------------------------
 */
@@ -25,10 +61,46 @@ router.get("/", async (req, res) => {
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | TEAM HAS ALREADY COMPLETED THE HUNT
+    |--------------------------------------------------------------------------
+    */
+
+    if (team.finished) {
+      const finalInfo = FINAL_MESSAGES[team.track] || {
+        title: "Path Completed",
+        message:
+          "You have completed your path. Report to the final gathering point.",
+      };
+
+      return res.json({
+        success: true,
+        completed: true,
+        code: 2000,
+        message: finalInfo.message,
+        data: {
+          finished: true,
+          qualified: team.qualified,
+          finalTitle: finalInfo.title,
+          finalMessage: finalInfo.message,
+        },
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET CURRENT CLUE
+    |--------------------------------------------------------------------------
+    */
+
     const clue = await prisma.clues.findFirst({
       where: {
         track: team.track,
         clueno: team.clueno,
+      },
+      orderBy: {
+        clueno: "asc",
       },
     });
 
@@ -42,8 +114,11 @@ router.get("/", async (req, res) => {
     return res.json({
       success: true,
       completed: false,
+      code: 1001,
       data: {
         clue,
+        finished: false,
+        qualified: false,
       },
     });
   } catch (error) {
@@ -66,8 +141,13 @@ router.post("/submit", async (req, res) => {
   try {
     const { lat, lng } = req.body;
 
-    // Allow 0 as a valid coordinate, so don't use !lat / !lan
-    if (lat === undefined || lan === undefined) {
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE GPS COORDINATES
+    |--------------------------------------------------------------------------
+    */
+
+    if (lat === undefined || lng === undefined) {
       return res.status(400).json({
         success: false,
         message: "Latitude and longitude are required",
@@ -75,9 +155,14 @@ router.post("/submit", async (req, res) => {
     }
 
     const latitude = Number(lat);
-    const longitude = Number(lan);
+    const longitude = Number(lng);
 
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    if (
+      Number.isNaN(latitude) ||
+      Number.isNaN(longitude) ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid latitude or longitude",
@@ -103,17 +188,36 @@ router.post("/submit", async (req, res) => {
       });
     }
 
-    if (team.stopped) {
+    /*
+    |--------------------------------------------------------------------------
+    | TEAM ALREADY FINISHED
+    |--------------------------------------------------------------------------
+    */
+
+    if (team.finished) {
+      const finalInfo = FINAL_MESSAGES[team.track] || {
+        title: "Path Completed",
+        message:
+          "You have already completed your path. Report to the final gathering point.",
+      };
+
       return res.json({
-        success: false,
+        success: true,
         completed: true,
-        message: "This team has already completed the treasure hunt.",
+        code: 2000,
+        message: finalInfo.message,
+        data: {
+          finished: true,
+          qualified: team.qualified,
+          finalTitle: finalInfo.title,
+          finalMessage: finalInfo.message,
+        },
       });
     }
 
     /*
     |--------------------------------------------------------------------------
-    | GET CURRENT CLUE AND ITS FOUR-POINT GEOFENCE
+    | GET CURRENT CLUE + FOUR CORNER GEOFENCE
     |--------------------------------------------------------------------------
     */
 
@@ -143,7 +247,7 @@ router.post("/submit", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | CHECK IF TEAM IS INSIDE THE FOUR-POINT GEOFENCE
+    | CHECK RECTANGLE / GEOFENCE
     |--------------------------------------------------------------------------
     */
 
@@ -156,17 +260,18 @@ router.post("/submit", async (req, res) => {
       return res.json({
         success: false,
         completed: false,
-        message: "You are not at the correct location",
+        message: "You are not at the correct location.",
       });
     }
 
     /*
     |--------------------------------------------------------------------------
-    | FIND THE NEXT AVAILABLE CLUE FOR THIS TRACK
-    |
-    | No hardcoded clue numbers.
-    | It simply finds the next clue in the database.
+    | FIND NEXT CLUE
     |--------------------------------------------------------------------------
+    |
+    | No hardcoded clue count.
+    | Finds the next highest clue number for this team's track.
+    |
     */
 
     const nextClue = await prisma.clues.findFirst({
@@ -183,30 +288,73 @@ router.post("/submit", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | IF THERE IS NO NEXT CLUE, THE HUNT IS COMPLETE
+    | NO NEXT CLUE = PATH COMPLETE
     |--------------------------------------------------------------------------
     */
 
     if (!nextClue) {
-      await prisma.teamLogins.update({
+      const now = new Date();
+
+      /*
+      |--------------------------------------------------------------------------
+      | DETERMINE QUALIFICATION
+      |--------------------------------------------------------------------------
+      |
+      | First 4 teams to finish the overall hunt qualify.
+      |
+      */
+
+      const qualifiedCount = await prisma.teamLogins.count({
+        where: {
+          qualified: true,
+        },
+      });
+
+      const shouldQualify = qualifiedCount < 4;
+
+      /*
+      |--------------------------------------------------------------------------
+      | MARK TEAM AS FINISHED
+      |--------------------------------------------------------------------------
+      */
+
+      const updatedTeam = await prisma.teamLogins.update({
         where: {
           id: team.id,
         },
         data: {
-          stopped: true,
+          finished: true,
+          finishedAt: now,
+          qualified: shouldQualify,
         },
       });
+
+      const finalInfo = FINAL_MESSAGES[team.track] || {
+        title: "Path Completed",
+        message:
+          "You have completed your path. Report to the final gathering point.",
+      };
 
       return res.json({
         success: true,
         completed: true,
-        message: "Congratulations! You have completed all checkpoints.",
+        code: 2000,
+        message: shouldQualify
+          ? `${finalInfo.message} You are currently among the first four finishers!`
+          : finalInfo.message,
+        data: {
+          finished: true,
+          qualified: updatedTeam.qualified,
+          finalTitle: finalInfo.title,
+          finalMessage: finalInfo.message,
+          finishedAt: updatedTeam.finishedAt,
+        },
       });
     }
 
     /*
     |--------------------------------------------------------------------------
-    | UNLOCK THE NEXT CLUE
+    | UNLOCK NEXT STORYLINE + CLUE
     |--------------------------------------------------------------------------
     */
 
@@ -219,17 +367,15 @@ router.post("/submit", async (req, res) => {
       },
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | RETURN NEXT CLUE
-    |--------------------------------------------------------------------------
-    */
-
     return res.json({
       success: true,
       completed: false,
-      message: "Correct location! Next checkpoint unlocked.",
-      clue: nextClue,
+      message: "Correct location! The next part of your journey has been unlocked.",
+      data: {
+        clue: nextClue,
+        finished: false,
+        qualified: false,
+      },
     });
   } catch (error) {
     console.error("CHECK LOCATION ERROR:", error);

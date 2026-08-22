@@ -206,13 +206,13 @@ const ThemePages = () => {
             showMessage(
               "success",
               res.message ||
-                "Location verified! The next part of your journey has been unlocked."
+              "Location verified! The next part of your journey has been unlocked."
             );
           } else {
             showMessage(
               "error",
               res.message ||
-                "You are not at the correct location."
+              "You are not at the correct location."
             );
 
             if (res.code === 1000) {
@@ -233,7 +233,7 @@ const ThemePages = () => {
           showMessage(
             "error",
             error.message ||
-              "Something went wrong while checking your location."
+            "Something went wrong while checking your location."
           );
         } finally {
           setLoading(false);
@@ -301,10 +301,9 @@ const ThemePages = () => {
             w-[90%] max-w-md px-6 py-4 rounded-2xl
             border-2 backdrop-blur-md shadow-2xl
             text-center font-geist-mono
-            ${
-              message.type === "success"
-                ? "bg-green-900/90 border-green-400 text-green-100"
-                : "bg-red-950/90 border-red-400 text-red-100"
+            ${message.type === "success"
+              ? "bg-green-900/90 border-green-400 text-green-100"
+              : "bg-red-950/90 border-red-400 text-red-100"
             }
           `}
         >
@@ -350,18 +349,20 @@ const ThemePages = () => {
         </div>
       )}
 
-      {/* CLUE */}
-      <div className="flex justify-center items-center mt-6 w-full">
-        <div
-          className={`w-full max-w-xl rounded-2xl p-5 ${theme.bgColor} border-4 ${theme.borderColor} shadow-xl`}
-        >
-          <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
-            Current Clue
-          </p>
+      {/* Clue */}
+      <div className="flex justify-center items-center px-8 mt-6 w-full">
+        <div className="w-full max-w-2xl">
+          <div
+            className={`rounded-2xl p-6 ${theme.bgColor} border-4 ${theme.borderColor} shadow-xl`}
+          >
+            <p className="text-[#D37E01] text-xs font-geist-mono uppercase tracking-[0.2em] mb-3 text-center">
+              Your Clue
+            </p>
 
-          <p className="text-white text-center text-sm md:text-base font-geist-mono select-none leading-relaxed whitespace-pre-line">
-            {clue.clue || "Your next clue is being prepared..."}
-          </p>
+            <p className="text-white text-center text-sm md:text-base leading-relaxed font-geist-mono select-none">
+              {clue.clue}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -391,10 +392,9 @@ const ThemePages = () => {
               border-4 ${theme.borderColor}
               whitespace-nowrap
               transition-all duration-200
-              ${
-                countdown > 0 || loading
-                  ? "opacity-70 cursor-not-allowed"
-                  : "cursor-pointer hover:scale-105"
+              ${countdown > 0 || loading
+                ? "opacity-70 cursor-not-allowed"
+                : "cursor-pointer hover:scale-105"
               }
             `}
             onClick={checkLocation}

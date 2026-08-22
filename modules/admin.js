@@ -124,8 +124,8 @@ router.get("/teams", async (req, res) => {
 
     const where = track
       ? {
-          track: String(track),
-        }
+        track: String(track),
+      }
       : {};
 
     const teams = await prisma.teamLogins.findMany({
@@ -412,13 +412,13 @@ router.post("/clue", async (req, res) => {
       data: {
         track: normalizedTrack,
         clueno: normalizedClueNo,
+        storyline: String(storyline).trim(),
+        clue: String(clue).trim(),
 
         name:
-          normalizedName ||
-          `Track ${normalizedTrack} - Checkpoint ${normalizedClueNo}`,
-
-        storyline: normalizedStoryline,
-        clue: normalizedClue,
+          name && String(name).trim()
+            ? String(name).trim()
+            : `Track ${normalizedTrack} - Checkpoint ${normalizedClueNo}`,
 
         location: {
           create: {

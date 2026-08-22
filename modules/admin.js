@@ -122,12 +122,10 @@ router.get("/teams", async (req, res) => {
 
     const track = req.query.track;
 
-    /*
-    | If no track is provided, return all teams.
-    */
-
     const where = track
-      ? { track: String(track) }
+      ? {
+          track: String(track),
+        }
       : {};
 
     const teams = await prisma.teamLogins.findMany({
@@ -152,106 +150,6 @@ router.get("/teams", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch teams",
-    });
-  }
-});
-
-/*
-|--------------------------------------------------------------------------
-| STOP A TRACK
-|--------------------------------------------------------------------------
-*/
-
-router.post("/stop", async (req, res) => {
-  try {
-    const admin = await checkAdmin(req);
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const track = String(req.body.track || "");
-
-    if (!VALID_TRACKS.includes(track)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid track",
-      });
-    }
-
-    const result = await prisma.teamLogins.updateMany({
-      where: {
-        track,
-      },
-      data: {
-        stopped: true,
-      },
-    });
-
-    return res.json({
-      success: true,
-      message: `Track ${track} has been stopped`,
-      updated: result.count,
-    });
-  } catch (error) {
-    console.error("STOP TRACK ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to stop track",
-    });
-  }
-});
-
-/*
-|--------------------------------------------------------------------------
-| START A TRACK
-|--------------------------------------------------------------------------
-*/
-
-router.post("/start", async (req, res) => {
-  try {
-    const admin = await checkAdmin(req);
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    const track = String(req.body.track || "");
-
-    if (!VALID_TRACKS.includes(track)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid track",
-      });
-    }
-
-    const result = await prisma.teamLogins.updateMany({
-      where: {
-        track,
-      },
-      data: {
-        stopped: false,
-      },
-    });
-
-    return res.json({
-      success: true,
-      message: `Track ${track} has been started`,
-      updated: result.count,
-    });
-  } catch (error) {
-    console.error("START TRACK ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to start track",
     });
   }
 });
@@ -291,7 +189,9 @@ router.post("/new", async (req, res) => {
     }
 
     /*
-    | Generate a credential and make sure it doesn't already exist.
+    |--------------------------------------------------------------------------
+    | Generate unique credential
+    |--------------------------------------------------------------------------
     */
 
     let credential;
@@ -313,7 +213,8 @@ router.post("/new", async (req, res) => {
         name,
         credential,
         clueno: 1,
-        stopped: false,
+        finished: false,
+        qualified: false,
       },
     });
 
@@ -339,8 +240,13 @@ router.post("/new", async (req, res) => {
 | CREATE NEW CLUE
 |--------------------------------------------------------------------------
 |
-| Each clue receives exactly four GPS points.
-| These four points define the geofence polygon.
+| Each clue has:
+| - Track
+| - Clue number
+| - Checkpoint name
+| - Storyline
+| - Clue
+| - Four GPS corner points
 |
 */
 
@@ -358,34 +264,55 @@ router.post("/clue", async (req, res) => {
     const {
       track,
       clueno,
-      clue,
       name,
+      storyline,
+      clue,
       co1,
       co2,
       co3,
       co4,
     } = req.body;
 
-    const normalizedTrack = String(track || "");
+    const normalizedTrack = String(track || "").trim();
     const normalizedClueNo = Number(clueno);
+    const normalizedName = String(name || "").trim();
+    const normalizedStoryline = String(storyline || "").trim();
+    const normalizedClue = String(clue || "").trim();
 
     /*
-    | Validate basic fields
+    |--------------------------------------------------------------------------
+    | Validate required fields
+    |--------------------------------------------------------------------------
     */
 
+    if (!normalizedTrack) {
+      return res.status(400).json({
+        success: false,
+        message: "Track is required",
+      });
+    }
+
     if (
-      !normalizedTrack ||
-      !normalizedClueNo ||
-      !clue ||
-      !co1 ||
-      !co2 ||
-      !co3 ||
-      !co4
+      !Number.isInteger(normalizedClueNo) ||
+      normalizedClueNo < 1
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "Track, clueno, clue and all four location points are required",
+        message: "Clue number must be a valid number greater than 0",
+      });
+    }
+
+    if (!normalizedStoryline) {
+      return res.status(400).json({
+        success: false,
+        message: "Storyline is required",
+      });
+    }
+
+    if (!normalizedClue) {
+      return res.status(400).json({
+        success: false,
+        message: "Clue text is required",
       });
     }
 
@@ -396,25 +323,58 @@ router.post("/clue", async (req, res) => {
       });
     }
 
-    if (
-      !Array.isArray(co1) ||
-      !Array.isArray(co2) ||
-      !Array.isArray(co3) ||
-      !Array.isArray(co4) ||
-      co1.length !== 2 ||
-      co2.length !== 2 ||
-      co3.length !== 2 ||
-      co4.length !== 2
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Each location point must contain exactly [latitude, longitude]",
-      });
+    /*
+    |--------------------------------------------------------------------------
+    | Validate all four GPS points
+    |--------------------------------------------------------------------------
+    */
+
+    const points = [co1, co2, co3, co4];
+
+    for (const point of points) {
+      if (
+        !Array.isArray(point) ||
+        point.length !== 2 ||
+        !Number.isFinite(Number(point[0])) ||
+        !Number.isFinite(Number(point[1]))
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Each GPS point must contain valid [latitude, longitude] values",
+        });
+      }
     }
 
     /*
-    | Convert all coordinates to strings for the PostgreSQL String[] columns.
+    |--------------------------------------------------------------------------
+    | Validate latitude and longitude ranges
+    |--------------------------------------------------------------------------
+    */
+
+    for (const point of points) {
+      const lat = Number(point[0]);
+      const lng = Number(point[1]);
+
+      if (lat < -90 || lat > 90) {
+        return res.status(400).json({
+          success: false,
+          message: "Latitude must be between -90 and 90",
+        });
+      }
+
+      if (lng < -180 || lng > 180) {
+        return res.status(400).json({
+          success: false,
+          message: "Longitude must be between -180 and 180",
+        });
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Convert coordinates to String[]
+    |--------------------------------------------------------------------------
     */
 
     const coordinate1 = co1.map((value) => String(value));
@@ -423,7 +383,9 @@ router.post("/clue", async (req, res) => {
     const coordinate4 = co4.map((value) => String(value));
 
     /*
-    | Prevent duplicate clue numbers within the same track.
+    |--------------------------------------------------------------------------
+    | Prevent duplicate clue numbers within same track
+    |--------------------------------------------------------------------------
     */
 
     const existingClue = await prisma.clues.findFirst({
@@ -441,18 +403,22 @@ router.post("/clue", async (req, res) => {
     }
 
     /*
-    | Create clue and its geolocation together.
+    |--------------------------------------------------------------------------
+    | Create clue and geofence
+    |--------------------------------------------------------------------------
     */
 
     const newClue = await prisma.clues.create({
       data: {
         track: normalizedTrack,
         clueno: normalizedClueNo,
-        clue: String(clue).trim(),
+
         name:
-          name && String(name).trim()
-            ? String(name).trim()
-            : `Track ${normalizedTrack} - Checkpoint ${normalizedClueNo}`,
+          normalizedName ||
+          `Track ${normalizedTrack} - Checkpoint ${normalizedClueNo}`,
+
+        storyline: normalizedStoryline,
+        clue: normalizedClue,
 
         location: {
           create: {
@@ -471,7 +437,7 @@ router.post("/clue", async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Checkpoint created successfully",
+      message: "Clue created successfully",
       data: newClue,
     });
   } catch (error) {
@@ -479,7 +445,7 @@ router.post("/clue", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to create checkpoint",
+      message: "Failed to create clue",
     });
   }
 });

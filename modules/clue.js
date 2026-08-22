@@ -64,7 +64,7 @@ router.get("/", async (req, res) => {
 
 router.post("/submit", async (req, res) => {
   try {
-    const { lat, lan } = req.body;
+    const { lat, lng } = req.body;
 
     // Allow 0 as a valid coordinate, so don't use !lat / !lan
     if (lat === undefined || lan === undefined) {

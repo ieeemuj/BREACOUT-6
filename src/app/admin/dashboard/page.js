@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [clueNo, setClueNo] = useState("");
   const [clueName, setClueName] = useState("");
   const [clueText, setClueText] = useState("");
+  const [storyline, setStoryline] = useState("");
 
   const [points, setPoints] = useState([
     { lat: "", lng: "" },
@@ -92,7 +93,7 @@ export default function Dashboard() {
   };
 
 
-  
+
 
   // Create team
   const createTeam = async () => {
@@ -172,13 +173,13 @@ export default function Dashboard() {
       const res = await post("admin/clue", {
         track: clueTrack,
         clueno: Number(clueNo),
-        clue: clueText.trim(),
-        name: clueName.trim() || `Clue ${clueNo}`,
-
-        co1: [formattedPoints[0].lat, formattedPoints[0].lng],
-        co2: [formattedPoints[1].lat, formattedPoints[1].lng],
-        co3: [formattedPoints[2].lat, formattedPoints[2].lng],
-        co4: [formattedPoints[3].lat, formattedPoints[3].lng],
+        storyline,
+        clue: clueText,
+        name: clueName,
+        co1: [Number(points[0].lat), Number(points[0].lng)],
+        co2: [Number(points[1].lat), Number(points[1].lng)],
+        co3: [Number(points[2].lat), Number(points[2].lng)],
+        co4: [Number(points[3].lat), Number(points[3].lng)],
       });
 
       if (res.success) {
@@ -187,6 +188,7 @@ export default function Dashboard() {
         setClueNo("");
         setClueName("");
         setClueText("");
+        setStoryline("");
 
         setPoints([
           { lat: "", lng: "" },
@@ -222,8 +224,8 @@ export default function Dashboard() {
       {response && (
         <div
           className={`mb-6 rounded-lg border p-4 font-semibold ${responseType === "success"
-              ? "border-green-300 bg-green-100 text-green-700"
-              : "border-red-300 bg-red-100 text-red-700"
+            ? "border-green-300 bg-green-100 text-green-700"
+            : "border-red-300 bg-red-100 text-red-700"
             }`}
         >
           {response}
@@ -426,6 +428,12 @@ export default function Dashboard() {
             className="mb-4 w-full rounded border px-4 py-3 text-black"
             value={clueName}
             onChange={(e) => setClueName(e.target.value)}
+          />
+          <textarea
+            placeholder="Enter storyline for this checkpoint"
+            className="border px-4 py-3 mb-4 w-full rounded text-black min-h-32"
+            value={storyline}
+            onChange={(e) => setStoryline(e.target.value)}
           />
 
           <textarea

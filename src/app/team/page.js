@@ -1,8 +1,8 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
-import { post } from "../service";
+import { post, get } from "../service";
 import { useRouter } from "next/navigation";
-import { get } from "../service";
 
 const themeData = {
   "1": {
@@ -43,66 +43,19 @@ const ThemePages = () => {
   const [theme, setTheme] = useState({});
   const [team, setTeam] = useState({});
   const [clue, setClue] = useState({});
-  const [userLocation, setUserLocation] = useState({
-    lat: 26.9124,
-    lng: 75.7873,
-  });
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
   const [finished, setFinished] = useState(false);
   const [message, setMessage] = useState(null);
+
   const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/";
-    }
-    async function getClue() {
-
-      const res = await get('clue');
-      if (res.success) {
-        if (res.code === 2000) {
-          setFinished(true);
-        }
-        localStorage.setItem("clue", JSON.stringify(res.data.clue));
-      } else {
-        alert(res.message || 'Unknown error');
-        console.log("CLUE RESPONSE:", res);
-        localStorage.removeItem("token");
-        window.location.href = "/";
-      }
-      const team = JSON.parse(localStorage.getItem("team"));
-      const clue = JSON.parse(localStorage.getItem("clue"));
-      const theme = themeData[String(team.track)];
-
-      if (!theme) {
-        console.error("Theme not found for track:", team.track);
-        alert(`Theme not found for track: ${team.track}`);
-        setRendering(false);
-        return;
-      }
-      setTeam(team);
-      setClue(clue);
-      setTheme(theme);
-      setRendering(false);
-    }
-
-    getClue();
-  }, []);
-
-  useEffect(() => {
-    let interval = null;
-
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [countdown]);
+  /*
+  |--------------------------------------------------------------------------
+  | SHOW MESSAGE
+  |--------------------------------------------------------------------------
+  */
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -112,19 +65,153 @@ const ThemePages = () => {
     }, 3500);
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD TEAM AND CURRENT CLUE
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    async function loadTeamData() {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          router.replace("/");
+          return;
+        }
+
+        const storedTeam = JSON.parse(localStorage.getItem("team"));
+
+        if (!storedTeam) {
+          localStorage.removeItem("token");
+          router.replace("/");
+          return;
+        }
+
+        const res = await get("clue");
+
+        if (!res.success) {
+          console.error("CLUE RESPONSE:", res);
+
+          localStorage.removeItem("token");
+          localStorage.removeItem("team");
+          localStorage.removeItem("clue");
+
+          router.replace("/");
+          return;
+        }
+
+        /*
+        | If backend reports completion
+        */
+
+        if (res.completed) {
+          setFinished(true);
+          setTeam(storedTeam);
+
+          showMessage(
+            "success",
+            res.message || "Congratulations! You have completed all checkpoints."
+          );
+
+          setRendering(false);
+          return;
+        }
+
+        /*
+        | Store current clue returned by backend
+        */
+
+        const currentClue = res.data?.clue;
+
+        if (!currentClue) {
+          console.error("No clue returned by backend:", res);
+          setRendering(false);
+          return;
+        }
+
+        localStorage.setItem("clue", JSON.stringify(currentClue));
+
+        /*
+        | Load theme
+        */
+
+        const selectedTheme = themeData[String(storedTeam.track)];
+
+        if (!selectedTheme) {
+          console.error(
+            "Theme not found for track:",
+            storedTeam.track
+          );
+
+          showMessage(
+            "error",
+            `Theme not found for track: ${storedTeam.track}`
+          );
+
+          setRendering(false);
+          return;
+        }
+
+        setTeam(storedTeam);
+        setClue(currentClue);
+        setTheme(selectedTheme);
+        setRendering(false);
+
+      } catch (error) {
+        console.error("Failed to load team data:", error);
+
+        showMessage(
+          "error",
+          error.message || "Failed to load your checkpoint."
+        );
+
+        setRendering(false);
+      }
+    }
+
+    loadTeamData();
+  }, [router]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | COUNTDOWN
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCountdown((previous) => previous - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [countdown]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | CHECK LOCATION
+  |--------------------------------------------------------------------------
+  */
+
   async function checkLocation() {
+    if (!navigator.geolocation) {
+      showMessage(
+        "error",
+        "Your browser does not support location services."
+      );
+      return;
+    }
+
     setLoading(true);
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async function (position) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-
-          setUserLocation({
-            lat,
-            lng,
-          });
 
           console.log("GPS location:", lat, lng);
 
@@ -132,86 +219,167 @@ const ThemePages = () => {
             lat,
             lan: lng,
           });
-          console.log(res);
-          if (res.success) {
-            localStorage.setItem("clue", JSON.stringify(res.clue));
 
-            if (res.code === 2000) {
+          console.log("LOCATION RESPONSE:", res);
+
+          /*
+          |--------------------------------------------------------------------------
+          | SUCCESS
+          |--------------------------------------------------------------------------
+          */
+
+          if (res.success) {
+            /*
+            | Hunt completed
+            */
+
+            if (res.completed) {
               setFinished(true);
+
+              showMessage(
+                "success",
+                res.message ||
+                  "Congratulations! You have completed all checkpoints."
+              );
+
+              setLoading(false);
+              return;
             }
 
+            /*
+            | Next clue unlocked
+            */
+
             if (res.clue) {
+              localStorage.setItem(
+                "clue",
+                JSON.stringify(res.clue)
+              );
+
               setClue(res.clue);
             }
 
             showMessage(
               "success",
-              res.message || "Correct location! Next clue unlocked."
-            );
-          } else {
-            showMessage(
-              "error",
-              res.message || "You are not at the correct location."
+              res.message ||
+                "Correct location! Next checkpoint unlocked."
             );
 
-            if (res.code === 1000) {
-              setTimeout(() => {
-                router.push("/");
-              }, 2000);
-            }
+            setCountdown(10);
           }
-          setCountdown(10);
-          setLoading(false);
-        },
-        function (err) {
-          console.log("error callback");
-          if (err.code === 1) {
-            alert(
-              "Error: You have denied the location permission. Please allow location for this website and refresh the webpage."
+
+          /*
+          |--------------------------------------------------------------------------
+          | FAILURE
+          |--------------------------------------------------------------------------
+          */
+
+          else {
+            showMessage(
+              "error",
+              res.message ||
+                "You are not at the correct location."
             );
-            setLoading(false);
-            return;
+
+            setCountdown(10);
           }
-          alert(err.message);
-          alert(err.code);
+
+        } catch (error) {
+          console.error("LOCATION CHECK ERROR:", error);
+
+          showMessage(
+            "error",
+            error.message ||
+              "Failed to check your location. Please try again."
+          );
+        } finally {
           setLoading(false);
         }
-      );
-    } else {
-      // Browser doesn't support Geolocation
-      console.log("Browser does not support geolocation");
-      alert("Browser does not support geolocation. Please try another browser.");
-      setLoading(false);
-    }
+      },
+
+      (error) => {
+        console.error("GEOLOCATION ERROR:", error);
+
+        if (error.code === 1) {
+          showMessage(
+            "error",
+            "Location permission was denied. Please allow location access and try again."
+          );
+        } else if (error.code === 2) {
+          showMessage(
+            "error",
+            "Your location could not be determined. Please try again."
+          );
+        } else if (error.code === 3) {
+          showMessage(
+            "error",
+            "Location request timed out. Please try again."
+          );
+        } else {
+          showMessage(
+            "error",
+            "Unable to get your location."
+          );
+        }
+
+        setLoading(false);
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
+    );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOADING SCREEN
+  |--------------------------------------------------------------------------
+  */
 
   if (rendering) {
     return (
       <div className="w-screen h-screen flex items-center justify-center">
-        <div className="text-3xl">Loading.. Please wait.</div>
+        <div className="text-3xl">
+          Loading... Please wait.
+        </div>
       </div>
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | PAGE
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <div
-      className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor} custom-font`}
-      style={{ backgroundImage: `url(${theme.image})` }}
+      className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor || ""} custom-font`}
+      style={{
+        backgroundImage: theme.image
+          ? `url(${theme.image})`
+          : "none",
+      }}
     >
-      {/* Pretty success/error message box */}
+      {/* SUCCESS / ERROR MESSAGE */}
+
       {message && (
         <div
           className={`
-          fixed top-6 left-1/2 -translate-x-1/2 z-50
-          w-[90%] max-w-md px-6 py-4 rounded-2xl
-          border-2 backdrop-blur-md shadow-2xl
-          text-center font-geist-mono
-          transition-all duration-300
-          ${message.type === "success"
-              ? "bg-green-900/90 border-green-400 text-green-100"
-              : "bg-red-950/90 border-red-400 text-red-100"
+            fixed top-6 left-1/2 -translate-x-1/2 z-50
+            w-[90%] max-w-md px-6 py-4 rounded-2xl
+            border-2 backdrop-blur-md shadow-2xl
+            text-center font-geist-mono
+            transition-all duration-300
+            ${
+              message.type === "success"
+                ? "bg-green-900/90 border-green-400 text-green-100"
+                : "bg-red-950/90 border-red-400 text-red-100"
             }
-        `}
+          `}
         >
           <div className="flex items-center justify-center gap-3">
             <span className="text-2xl font-bold">
@@ -225,51 +393,74 @@ const ThemePages = () => {
         </div>
       )}
 
-      {/* Logo and team name */}
-      <div className="flex flex-col justify-center items-center">
-        {/*<img src={theme.logo} alt="Theme logo" className="w-40 h-40" />*/}
+      {/* TEAM NAME */}
 
+      <div className="flex flex-col justify-center items-center">
         <div className="pt-10">
           <p className="font-bold text-3xl text-center font-geist-sans text-[#D37E01]">
             Team
           </p>
 
           <p className="font-bold text-4xl text-center pt-2 text-[#D37E01] font-astrolab">
-            {team.name}
+            {team.name || "Unknown Team"}
           </p>
         </div>
       </div>
 
-      {/* Clue box */}
-      <div className="flex justify-center items-center px-8 mt-10 f">
+      {/* CLUE */}
+
+      <div className="flex justify-center items-center px-8 mt-10">
         <div className="pt-5 px-4">
           <div
-            className={`rounded-2xl p-4 ${theme.bgColor} border-4 ${theme.borderColor}`}
+            className={`rounded-2xl p-4 ${theme.bgColor || ""} border-4 ${theme.borderColor || ""}`}
           >
             <p className="text-white text-center text-sm font-geist-mono select-none">
-              {clue.clue}
+              {finished
+                ? "All checkpoints completed."
+                : clue.clue || "No checkpoint available."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Check location */}
-      <div className={`mt-10 ${finished ? "hidden" : "block"}`}>
-        <button
-          className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor}
-          whitespace-nowrap cursor-pointer mb-20
-          ${(countdown > 0 || loading) ? "opacity-70 cursor-not-allowed" : ""}
-        `}
-          onClick={loading ? null : checkLocation}
-          disabled={countdown > 0 || loading}
-        >
-          {loading
-            ? "Checking..."
-            : countdown > 0
+      {/* COMPLETION MESSAGE */}
+
+      {finished && (
+        <div className="mt-8 px-8 text-center">
+          <p className="text-white font-geist-mono">
+            Congratulations! You have completed the hunt.
+          </p>
+        </div>
+      )}
+
+      {/* CHECK LOCATION BUTTON */}
+
+      {!finished && (
+        <div className="mt-10">
+          <button
+            className={`
+              rounded-2xl font-geist-mono
+              w-auto text-md h-auto py-2 px-6
+              border-4 ${theme.borderColor || ""}
+              whitespace-nowrap mb-20
+              transition-all duration-200
+              ${
+                countdown > 0 || loading
+                  ? "opacity-70 cursor-not-allowed"
+                  : "cursor-pointer"
+              }
+            `}
+            onClick={checkLocation}
+            disabled={countdown > 0 || loading}
+          >
+            {loading
+              ? "Checking..."
+              : countdown > 0
               ? `Please wait (${countdown})`
               : "Check location"}
-        </button>
-      </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

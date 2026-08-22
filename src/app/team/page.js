@@ -5,37 +5,36 @@ import { post, get } from "../service";
 import { useRouter } from "next/navigation";
 
 const themeData = {
-  "1": {
+  a: {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#501D27]",
     borderColor: "border-[#D37E01]",
-    logo: "/g-1.png",
-    name: "Track #1",
+    name: "Path A: The Citadel",
   },
-  "2": {
+
+  b: {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
-    bgColor: "bg-[#D37E01]",
+    bgColor: "bg-[#4A2C14]",
     borderColor: "border-[#D37E01]",
-    logo: "/h-1.png",
-    name: "Track #2",
+    name: "Path B: The Sovereign",
   },
-  "3": {
+
+  c: {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
     borderColor: "border-[#D37E01]",
-    logo: "/r-1.png",
-    name: "Track #3",
+    name: "Path C: The Nexus",
   },
-  "4": {
+
+  d: {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#134731]",
     borderColor: "border-[#D37E01]",
-    logo: "/s-1.png",
-    name: "Track #4",
+    name: "Path D: The Frontier",
   },
 };
 
@@ -51,11 +50,99 @@ const ThemePages = () => {
 
   const router = useRouter();
 
-  /*
-  |--------------------------------------------------------------------------
-  | SHOW MESSAGE
-  |--------------------------------------------------------------------------
-  */
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/");
+      return;
+    }
+
+    async function getClue() {
+      try {
+        const res = await get("clue");
+
+        console.log("CLUE RESPONSE:", res);
+
+        if (!res.success) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("team");
+          localStorage.removeItem("clue");
+
+          router.push("/");
+          return;
+        }
+
+        if (res.code === 2000) {
+          setFinished(true);
+        }
+
+        if (res.data?.clue) {
+          localStorage.setItem(
+            "clue",
+            JSON.stringify(res.data.clue)
+          );
+        }
+
+        const storedTeam = JSON.parse(
+          localStorage.getItem("team") || "{}"
+        );
+
+        const currentClue = res.data?.clue ||
+          JSON.parse(localStorage.getItem("clue") || "{}");
+
+        const currentTheme =
+          themeData[String(storedTeam.track).toLowerCase()];
+
+        if (!currentTheme) {
+          console.error(
+            "Theme not found for track:",
+            storedTeam.track
+          );
+
+          setMessage({
+            type: "error",
+            text: `Invalid path: ${storedTeam.track}`,
+          });
+
+          setRendering(false);
+          return;
+        }
+
+        setTeam(storedTeam);
+        setClue(currentClue);
+        setTheme(currentTheme);
+      } catch (error) {
+        console.error("Error loading clue:", error);
+
+        setMessage({
+          type: "error",
+          text: "Unable to load your current clue.",
+        });
+      } finally {
+        setRendering(false);
+      }
+    }
+
+    getClue();
+  }, [router]);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -65,147 +152,18 @@ const ThemePages = () => {
     }, 3500);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD TEAM AND CURRENT CLUE
-  |--------------------------------------------------------------------------
-  */
-
-  useEffect(() => {
-    async function loadTeamData() {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          router.replace("/");
-          return;
-        }
-
-        const storedTeam = JSON.parse(localStorage.getItem("team"));
-
-        if (!storedTeam) {
-          localStorage.removeItem("token");
-          router.replace("/");
-          return;
-        }
-
-        const res = await get("clue");
-
-        if (!res.success) {
-          console.error("CLUE RESPONSE:", res);
-
-          localStorage.removeItem("token");
-          localStorage.removeItem("team");
-          localStorage.removeItem("clue");
-
-          router.replace("/");
-          return;
-        }
-
-        /*
-        | If backend reports completion
-        */
-
-        if (res.completed) {
-          setFinished(true);
-          setTeam(storedTeam);
-
-          showMessage(
-            "success",
-            res.message || "Congratulations! You have completed all checkpoints."
-          );
-
-          setRendering(false);
-          return;
-        }
-
-        /*
-        | Store current clue returned by backend
-        */
-
-        const currentClue = res.data?.clue;
-
-        if (!currentClue) {
-          console.error("No clue returned by backend:", res);
-          setRendering(false);
-          return;
-        }
-
-        localStorage.setItem("clue", JSON.stringify(currentClue));
-
-        /*
-        | Load theme
-        */
-
-        const selectedTheme = themeData[String(storedTeam.track)];
-
-        if (!selectedTheme) {
-          console.error(
-            "Theme not found for track:",
-            storedTeam.track
-          );
-
-          showMessage(
-            "error",
-            `Theme not found for track: ${storedTeam.track}`
-          );
-
-          setRendering(false);
-          return;
-        }
-
-        setTeam(storedTeam);
-        setClue(currentClue);
-        setTheme(selectedTheme);
-        setRendering(false);
-
-      } catch (error) {
-        console.error("Failed to load team data:", error);
-
-        showMessage(
-          "error",
-          error.message || "Failed to load your checkpoint."
-        );
-
-        setRendering(false);
-      }
-    }
-
-    loadTeamData();
-  }, [router]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | COUNTDOWN
-  |--------------------------------------------------------------------------
-  */
-
-  useEffect(() => {
-    if (countdown <= 0) return;
-
-    const interval = setInterval(() => {
-      setCountdown((previous) => previous - 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [countdown]);
-
-  /*
-  |--------------------------------------------------------------------------
-  | CHECK LOCATION
-  |--------------------------------------------------------------------------
-  */
-
   async function checkLocation() {
+    setLoading(true);
+
     if (!navigator.geolocation) {
       showMessage(
         "error",
         "Your browser does not support location services."
       );
+
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -217,100 +175,85 @@ const ThemePages = () => {
 
           const res = await post("clue/submit", {
             lat,
-            lan: lng,
+            lng,
           });
 
-          console.log("LOCATION RESPONSE:", res);
-
-          /*
-          |--------------------------------------------------------------------------
-          | SUCCESS
-          |--------------------------------------------------------------------------
-          */
+          console.log("SUBMIT RESPONSE:", res);
 
           if (res.success) {
             /*
-            | Hunt completed
+              Support both possible backend response formats:
+              res.data.clue
+              OR
+              res.clue
             */
+            const nextClue =
+              res.data?.clue || res.clue;
 
-            if (res.completed) {
-              setFinished(true);
+            if (nextClue) {
+              setClue(nextClue);
 
-              showMessage(
-                "success",
-                res.message ||
-                  "Congratulations! You have completed all checkpoints."
-              );
-
-              setLoading(false);
-              return;
-            }
-
-            /*
-            | Next clue unlocked
-            */
-
-            if (res.clue) {
               localStorage.setItem(
                 "clue",
-                JSON.stringify(res.clue)
+                JSON.stringify(nextClue)
               );
+            }
 
-              setClue(res.clue);
+            if (res.code === 2000) {
+              setFinished(true);
             }
 
             showMessage(
               "success",
               res.message ||
-                "Correct location! Next checkpoint unlocked."
+                "Location verified! The next part of your journey has been unlocked."
             );
-
-            setCountdown(10);
-          }
-
-          /*
-          |--------------------------------------------------------------------------
-          | FAILURE
-          |--------------------------------------------------------------------------
-          */
-
-          else {
+          } else {
             showMessage(
               "error",
               res.message ||
                 "You are not at the correct location."
             );
 
-            setCountdown(10);
+            if (res.code === 1000) {
+              setTimeout(() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("team");
+                localStorage.removeItem("clue");
+
+                router.push("/");
+              }, 2000);
+            }
           }
 
+          setCountdown(10);
         } catch (error) {
-          console.error("LOCATION CHECK ERROR:", error);
+          console.error("Location submission error:", error);
 
           showMessage(
             "error",
             error.message ||
-              "Failed to check your location. Please try again."
+              "Something went wrong while checking your location."
           );
         } finally {
           setLoading(false);
         }
       },
 
-      (error) => {
-        console.error("GEOLOCATION ERROR:", error);
+      (err) => {
+        console.error("Geolocation error:", err);
 
-        if (error.code === 1) {
+        if (err.code === 1) {
           showMessage(
             "error",
             "Location permission was denied. Please allow location access and try again."
           );
-        } else if (error.code === 2) {
+        } else if (err.code === 2) {
           showMessage(
             "error",
             "Your location could not be determined. Please try again."
           );
-        } else if (error.code === 3) {
+        } else if (err.code === 3) {
           showMessage(
             "error",
             "Location request timed out. Please try again."
@@ -318,7 +261,7 @@ const ThemePages = () => {
         } else {
           showMessage(
             "error",
-            "Unable to get your location."
+            "Unable to access your location."
           );
         }
 
@@ -333,39 +276,24 @@ const ThemePages = () => {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOADING SCREEN
-  |--------------------------------------------------------------------------
-  */
-
   if (rendering) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center">
-        <div className="text-3xl">
-          Loading... Please wait.
+      <div className="w-screen h-screen flex items-center justify-center bg-black">
+        <div className="text-2xl text-white font-geist-mono">
+          Loading your journey...
         </div>
       </div>
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | PAGE
-  |--------------------------------------------------------------------------
-  */
-
   return (
     <div
-      className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor || ""} custom-font`}
+      className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor} custom-font px-4`}
       style={{
-        backgroundImage: theme.image
-          ? `url(${theme.image})`
-          : "none",
+        backgroundImage: `url(${theme.image})`,
       }}
     >
       {/* SUCCESS / ERROR MESSAGE */}
-
       {message && (
         <div
           className={`
@@ -373,7 +301,6 @@ const ThemePages = () => {
             w-[90%] max-w-md px-6 py-4 rounded-2xl
             border-2 backdrop-blur-md shadow-2xl
             text-center font-geist-mono
-            transition-all duration-300
             ${
               message.type === "success"
                 ? "bg-green-900/90 border-green-400 text-green-100"
@@ -394,70 +321,90 @@ const ThemePages = () => {
       )}
 
       {/* TEAM NAME */}
+      <div className="flex flex-col justify-center items-center mt-8">
+        <p className="font-bold text-3xl text-center font-geist-sans text-[#D37E01]">
+          Team
+        </p>
 
-      <div className="flex flex-col justify-center items-center">
-        <div className="pt-10">
-          <p className="font-bold text-3xl text-center font-geist-sans text-[#D37E01]">
-            Team
-          </p>
+        <p className="font-bold text-4xl text-center pt-2 text-[#D37E01] font-astrolab">
+          {team.name}
+        </p>
 
-          <p className="font-bold text-4xl text-center pt-2 text-[#D37E01] font-astrolab">
-            {team.name || "Unknown Team"}
-          </p>
-        </div>
+        <p className="text-white/70 text-sm mt-3 font-geist-mono">
+          {theme.name}
+        </p>
       </div>
 
-      {/* CLUE */}
+      {/* STORYLINE */}
+      {clue.storyline && (
+        <div className="flex justify-center items-center mt-10 w-full">
+          <div className="w-full max-w-xl rounded-2xl p-5 bg-black/50 border-2 border-white/20 backdrop-blur-md shadow-xl">
+            <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
+              The Story Continues
+            </p>
 
-      <div className="flex justify-center items-center px-8 mt-10">
-        <div className="pt-5 px-4">
-          <div
-            className={`rounded-2xl p-4 ${theme.bgColor || ""} border-4 ${theme.borderColor || ""}`}
-          >
-            <p className="text-white text-center text-sm font-geist-mono select-none">
-              {finished
-                ? "All checkpoints completed."
-                : clue.clue || "No checkpoint available."}
+            <p className="text-white text-center text-sm md:text-base font-geist-mono leading-relaxed whitespace-pre-line">
+              {clue.storyline}
             </p>
           </div>
         </div>
+      )}
+
+      {/* CLUE */}
+      <div className="flex justify-center items-center mt-6 w-full">
+        <div
+          className={`w-full max-w-xl rounded-2xl p-5 ${theme.bgColor} border-4 ${theme.borderColor} shadow-xl`}
+        >
+          <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
+            Current Clue
+          </p>
+
+          <p className="text-white text-center text-sm md:text-base font-geist-mono select-none leading-relaxed whitespace-pre-line">
+            {clue.clue || "Your next clue is being prepared..."}
+          </p>
+        </div>
       </div>
 
-      {/* COMPLETION MESSAGE */}
-
+      {/* FINISHED MESSAGE */}
       {finished && (
-        <div className="mt-8 px-8 text-center">
-          <p className="text-white font-geist-mono">
-            Congratulations! You have completed the hunt.
-          </p>
+        <div className="flex justify-center items-center mt-8 w-full mb-10">
+          <div className="w-full max-w-xl rounded-2xl p-6 bg-[#D37E01]/20 border-2 border-[#D37E01] backdrop-blur-md shadow-xl">
+            <p className="text-[#D37E01] text-center text-xl font-bold mb-3">
+              Path Complete
+            </p>
+
+            <p className="text-white text-center text-sm font-geist-mono leading-relaxed">
+              You have completed your path. Report to the final common location.
+              The first four teams to arrive will qualify for the next round.
+            </p>
+          </div>
         </div>
       )}
 
-      {/* CHECK LOCATION BUTTON */}
-
+      {/* CHECK LOCATION */}
       {!finished && (
-        <div className="mt-10">
+        <div className="mt-10 mb-16">
           <button
             className={`
               rounded-2xl font-geist-mono
-              w-auto text-md h-auto py-2 px-6
-              border-4 ${theme.borderColor || ""}
-              whitespace-nowrap mb-20
+              text-md py-3 px-8
+              border-4 ${theme.borderColor}
+              whitespace-nowrap
               transition-all duration-200
               ${
                 countdown > 0 || loading
                   ? "opacity-70 cursor-not-allowed"
-                  : "cursor-pointer"
+                  : "cursor-pointer hover:scale-105"
               }
             `}
             onClick={checkLocation}
             disabled={countdown > 0 || loading}
           >
             {loading
-              ? "Checking..."
+              ? "Checking location..."
               : countdown > 0
-              ? `Please wait (${countdown})`
-              : "Check location"}
+                ? `Please wait (${countdown})`
+                : "Check Location"}
           </button>
         </div>
       )}

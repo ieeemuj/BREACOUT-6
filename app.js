@@ -58,9 +58,11 @@ app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+const port = process.env.PORT || process.env.BACKEND_PORT || 5000;
+
 if (!process.env.VERCEL) {
-  app.listen(process.env.BACKEND_PORT, () => {
-    console.log(`Server is running on port ${process.env.BACKEND_PORT}`);
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 }
 

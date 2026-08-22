@@ -20,10 +20,16 @@ model TeamLogins {
   credential   String    @unique
   clueno       Int       @default(1)
 
+  // Team has completed the final checkpoint
+  // and must return to Old Mess
+  returning    Boolean   @default(false)
+
+  // Team has successfully returned to Old Mess
   finished     Boolean   @default(false)
   finishedAt   DateTime?
   qualified    Boolean   @default(false)
 }
+
 
 model Geolocations {
   id          String   @id @default(uuid())
@@ -51,3 +57,4 @@ model Admins {
   password String
   token    String
 }
+

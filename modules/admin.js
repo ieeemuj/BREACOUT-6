@@ -450,4 +450,218 @@ router.post("/clue", async (req, res) => {
   }
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| FINISH TEAM AT OLD MESS
+|--------------------------------------------------------------------------
+|
+| Called by an organizer after the team physically returns to Old Mess.
+| The first team to finish each track qualifies for Round 2.
+|
+*/
+
+router.post("/finish-team", async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: "Team credential is required",
+      });
+    }
+
+    // Find the team
+    const team = await prisma.teamLogins.findFirst({
+      where: {
+        credential,
+      },
+    });
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Team must have completed all 5 checkpoints first
+    if (!team.returning) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This team has not completed the final checkpoint yet.",
+      });
+    }
+
+    // Prevent finishing twice
+    if (team.finished) {
+      return res.status(400).json({
+        success: false,
+        message: "This team has already finished.",
+      });
+    }
+
+    /*
+    --------------------------------------------------------------
+    CHECK IF SOMEONE FROM THIS TRACK ALREADY QUALIFIED
+    --------------------------------------------------------------
+    */
+
+    const alreadyQualified = await prisma.teamLogins.findFirst({
+      where: {
+        track: team.track,
+        qualified: true,
+      },
+      orderBy: {
+        finishedAt: "asc",
+      },
+    });
+
+    const qualifies = !alreadyQualified;
+
+    /*
+    --------------------------------------------------------------
+    FINISH THE TEAM
+    --------------------------------------------------------------
+    */
+
+    const finishedTeam = await prisma.teamLogins.update({
+      where: {
+        id: team.id,
+      },
+      data: {
+        finished: true,
+        finishedAt: new Date(),
+        qualified: qualifies,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: qualifies
+        ? "Team finished first on this track and QUALIFIED for Round 2!"
+        : "Team has successfully completed Round 1.",
+      data: {
+        team: finishedTeam,
+        qualified: qualifies,
+      },
+    });
+  } catch (error) {
+    console.error("FINISH TEAM ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to finish team",
+    });
+  }
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| FINISH TEAM AT OLD MESS
+|--------------------------------------------------------------------------
+|
+| Called by an organizer after the team physically returns to Old Mess.
+| The first team to finish each track qualifies for Round 2.
+|
+*/
+
+router.post("/finish-team", async (req, res) => {
+  try {
+    const admin = await checkAdmin(req);
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: "Team credential is required",
+      });
+    }
+
+    // Find the team
+    const team = await prisma.teamLogins.findFirst({
+      where: {
+        credential,
+      },
+    });
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Team must have completed all checkpoints first
+    if (!team.returning) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This team has not completed the final checkpoint yet.",
+      });
+    }
+
+    // Prevent finishing twice
+    if (team.finished) {
+      return res.status(400).json({
+        success: false,
+        message: "This team has already finished.",
+      });
+    }
+
+    // Check whether a team from this track already qualified
+    const alreadyQualified = await prisma.teamLogins.findFirst({
+      where: {
+        track: team.track,
+        qualified: true,
+      },
+    });
+
+    // Only the first team on this track qualifies
+    const qualifies = !alreadyQualified;
+
+    // Mark team as finished
+    const finishedTeam = await prisma.teamLogins.update({
+      where: {
+        id: team.id,
+      },
+      data: {
+        finished: true,
+        finishedAt: new Date(),
+        qualified: qualifies,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: qualifies
+        ? "Team finished first on this track and QUALIFIED for Round 2!"
+        : "Team has successfully completed Round 1.",
+      data: {
+        team: finishedTeam,
+        qualified: qualifies,
+      },
+    });
+  } catch (error) {
+    console.error("FINISH TEAM ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to finish team",
+    });
+  }
+});
+
+
 export default router;

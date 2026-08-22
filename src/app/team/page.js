@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { get } from "../service";
 
 const themeData = {
-  gr: {
+  "1": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#501D27]",
@@ -13,7 +13,7 @@ const themeData = {
     logo: "/g-1.png",
     name: "Track #1",
   },
-  hu: {
+  "2": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#D37E01]",
@@ -21,7 +21,7 @@ const themeData = {
     logo: "/h-1.png",
     name: "Track #2",
   },
-  re: {
+  "3": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#063E53]",
@@ -29,7 +29,7 @@ const themeData = {
     logo: "/r-1.png",
     name: "Track #3",
   },
-  sl: {
+  "4": {
     image:
       "https://images.prismic.io/ieeemuj/aL0komGNHVfTOvF9_re.png?auto=format,compress",
     bgColor: "bg-[#134731]",
@@ -51,6 +51,7 @@ const ThemePages = () => {
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [message, setMessage] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -59,6 +60,7 @@ const ThemePages = () => {
       window.location.href = "/";
     }
     async function getClue() {
+
       const res = await get('clue');
       if (res.success) {
         if (res.code === 2000) {
@@ -66,13 +68,21 @@ const ThemePages = () => {
         }
         localStorage.setItem("clue", JSON.stringify(res.data.clue));
       } else {
-        alert('Session expired! Please login again.');
+        alert(res.message || 'Unknown error');
+        console.log("CLUE RESPONSE:", res);
         localStorage.removeItem("token");
         window.location.href = "/";
       }
       const team = JSON.parse(localStorage.getItem("team"));
       const clue = JSON.parse(localStorage.getItem("clue"));
-      const theme = themeData[team.track];
+      const theme = themeData[String(team.track)];
+
+      if (!theme) {
+        console.error("Theme not found for track:", team.track);
+        alert(`Theme not found for track: ${team.track}`);
+        setRendering(false);
+        return;
+      }
       setTeam(team);
       setClue(clue);
       setTheme(theme);
@@ -93,6 +103,14 @@ const ThemePages = () => {
 
     return () => clearInterval(interval);
   }, [countdown]);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+
+    setTimeout(() => {
+      setMessage(null);
+    }, 3500);
+  };
 
   async function checkLocation() {
     setLoading(true);
@@ -117,15 +135,29 @@ const ThemePages = () => {
           console.log(res);
           if (res.success) {
             localStorage.setItem("clue", JSON.stringify(res.clue));
+
             if (res.code === 2000) {
               setFinished(true);
             }
-            setClue(res.clue);
-            alert('Correct location! Next clue unlocked.');
+
+            if (res.clue) {
+              setClue(res.clue);
+            }
+
+            showMessage(
+              "success",
+              res.message || "Correct location! Next clue unlocked."
+            );
           } else {
-            alert(res.message);
+            showMessage(
+              "error",
+              res.message || "You are not at the correct location."
+            );
+
             if (res.code === 1000) {
-              router.push("/");
+              setTimeout(() => {
+                router.push("/");
+              }, 2000);
             }
           }
           setCountdown(10);
@@ -166,24 +198,49 @@ const ThemePages = () => {
       className={`flex flex-col items-center justify-center min-h-screen bg-center bg-cover bg-no-repeat ${theme.bgColor} custom-font`}
       style={{ backgroundImage: `url(${theme.image})` }}
     >
-      {/* logo and name */}
+      {/* Pretty success/error message box */}
+      {message && (
+        <div
+          className={`
+          fixed top-6 left-1/2 -translate-x-1/2 z-50
+          w-[90%] max-w-md px-6 py-4 rounded-2xl
+          border-2 backdrop-blur-md shadow-2xl
+          text-center font-geist-mono
+          transition-all duration-300
+          ${message.type === "success"
+              ? "bg-green-900/90 border-green-400 text-green-100"
+              : "bg-red-950/90 border-red-400 text-red-100"
+            }
+        `}
+        >
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-2xl font-bold">
+              {message.type === "success" ? "✓" : "✕"}
+            </span>
+
+            <p className="text-sm font-semibold">
+              {message.text}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Logo and team name */}
       <div className="flex flex-col justify-center items-center">
         {/*<img src={theme.logo} alt="Theme logo" className="w-40 h-40" />*/}
+
         <div className="pt-10">
-          <p
-            className={`font-bold text-3xl text-center font-geist-sans text-[#D37E01]`}
-          >
+          <p className="font-bold text-3xl text-center font-geist-sans text-[#D37E01]">
             Team
           </p>
-          <p
-            className={`font-bold text-4xl text-center pt-2 text-[#D37E01] font-astrolab`}
-          >
+
+          <p className="font-bold text-4xl text-center pt-2 text-[#D37E01] font-astrolab">
             {team.name}
           </p>
         </div>
       </div>
 
-      {/* clue box */}
+      {/* Clue box */}
       <div className="flex justify-center items-center px-8 mt-10 f">
         <div className="pt-5 px-4">
           <div
@@ -197,14 +254,20 @@ const ThemePages = () => {
       </div>
 
       {/* Check location */}
-      <div className={`mt-10 ${finished ? 'hidden' : 'block'}`}>
+      <div className={`mt-10 ${finished ? "hidden" : "block"}`}>
         <button
-          className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor} 
-          whitespace-nowrap cursor-pointer ${(countdown > 0 || loading) ? 'disabled:opacity-70' : ''} mb-20`}
+          className={`rounded-2xl font-geist-mono w-auto text-md h-auto py-2 px-6 border-4 ${theme.borderColor}
+          whitespace-nowrap cursor-pointer mb-20
+          ${(countdown > 0 || loading) ? "opacity-70 cursor-not-allowed" : ""}
+        `}
           onClick={loading ? null : checkLocation}
           disabled={countdown > 0 || loading}
         >
-          {loading ? `Checking...` : countdown > 0 ? `Please wait (${countdown})` : "Check location"}
+          {loading
+            ? "Checking..."
+            : countdown > 0
+              ? `Please wait (${countdown})`
+              : "Check location"}
         </button>
       </div>
     </div>

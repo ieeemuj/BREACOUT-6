@@ -1,38 +1,42 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://breacout-6-1.onrender.com";
 
-function get(path) {
-  return fetch(`${BASE_URL}/${path}`, {
-    method: 'GET',
+export async function get(endpoint) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}/${endpoint}`, {
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
-  }).then((response) => response.json())
+  });
+
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
+  }
 }
 
-function post(path, data) {
+export async function post(endpoint, data) {
+  const token = localStorage.getItem("token");
 
-  console.log("BASE_URL:", BASE_URL);
-  return fetch(`${BASE_URL}/${path}`, {
-    method: 'POST',
+  const response = await fetch(`${BASE_URL}/${endpoint}`, {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify(data),
-  }).then(async (response) => {
-    const text = await response.text();
-
-    console.log("STATUS:", response.status);
-    console.log("URL:", response.url);
-    console.log("RESPONSE:", text);
-
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
-    }
   });
-}
 
-export {get , post}
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
+  }
+}

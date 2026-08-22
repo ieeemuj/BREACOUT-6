@@ -5,10 +5,10 @@ import { useState } from "react";
 import Modal from "./modal";
 
 const trackMap = {
-  a: "Path A: The Citadel",
-  b: "Path B: The Sovereign",
-  c: "Path C: The Nexus",
-  d: "Path D: The Frontier",
+  1: "Path A: The Citadel",
+  2: "Path B: The Sovereign",
+  3: "Path C: The Nexus",
+  4: "Path D: The Frontier",
 };
 
 export default function Dashboard() {
@@ -53,52 +53,92 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      setResponse("Admin session not found. Please login again.");
+      showResponse(
+        "Admin session not found. Please login again.",
+        "error"
+      );
       return;
     }
 
-    // Select the track immediately
     setTrack(selectedTrack);
     setTeams([]);
-    setStopped(false);
     setIsLoading(true);
     setResponse(null);
 
     try {
-      const data = await get(`admin/teams?track=${selectedTrack}`);
+      const data = await get(
+        `admin/teams?track=${selectedTrack}`
+      );
 
       console.log("Teams response:", data);
 
-      // Handle API errors
       if (data?.success === false) {
-        throw new Error(data.message || "Failed to fetch teams");
+        throw new Error(
+          data.message || "Failed to fetch teams"
+        );
       }
 
-      // Your backend currently returns the teams array directly
-      const fetchedTeams = Array.isArray(data) ? data : data?.data || [];
+      const fetchedTeams = Array.isArray(data)
+        ? data
+        : data?.data || [];
 
       setTeams(fetchedTeams);
-
-      // All teams in a track have the same stopped status
-      if (fetchedTeams.length > 0) {
-        setStopped(Boolean(fetchedTeams[0].stopped));
-      }
     } catch (error) {
       console.error("Error fetching teams:", error);
       setTeams([]);
-      setResponse(error.message || "Could not fetch teams");
+
+      showResponse(
+        error.message || "Could not fetch teams",
+        "error"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Mark team as arrived at Old Mess
+  const finishTeam = async (team) => {
+    const confirmed = window.confirm(
+      `Confirm that ${team.name} has physically arrived at Old Mess?`
+    );
 
+    if (!confirmed) return;
 
+    try {
+      const res = await post("admin/finish-team", {
+        credential: team.credential,
+      });
+
+      if (res.success) {
+        showResponse(res.message);
+
+        // Refresh the current track immediately
+        if (track) {
+          fetchTeams(track);
+        }
+      } else {
+        showResponse(
+          res.message || "Failed to finish team.",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error finishing team:", error);
+
+      showResponse(
+        error.message || "Failed to finish team.",
+        "error"
+      );
+    }
+  };
 
   // Create team
   const createTeam = async () => {
     if (!teamName.trim() || !teamTrack) {
-      showResponse("Please enter team name and select a track.", "error");
+      showResponse(
+        "Please enter team name and select a track.",
+        "error"
+      );
       return;
     }
 
@@ -121,11 +161,18 @@ export default function Dashboard() {
           fetchTeams(track);
         }
       } else {
-        showResponse(res.message || "Error creating team.", "error");
+        showResponse(
+          res.message || "Error creating team.",
+          "error"
+        );
       }
     } catch (error) {
       console.error(error);
-      showResponse("Error creating team.", "error");
+
+      showResponse(
+        error.message || "Error creating team.",
+        "error"
+      );
     }
   };
 
@@ -133,10 +180,12 @@ export default function Dashboard() {
   const updatePoint = (index, field, value) => {
     setPoints((prev) => {
       const updated = [...prev];
+
       updated[index] = {
         ...updated[index],
         [field]: value,
       };
+
       return updated;
     });
   };
@@ -159,13 +208,14 @@ export default function Dashboard() {
     const invalidPoint = formattedPoints.some(
       (point) =>
         Number.isNaN(point.lat) ||
-        Number.isNaN(point.lng) ||
-        point.lat === 0 ||
-        point.lng === 0
+        Number.isNaN(point.lng)
     );
 
     if (invalidPoint) {
-      showResponse("Please enter valid latitude and longitude for all 4 points.", "error");
+      showResponse(
+        "Please enter valid latitude and longitude for all 4 points.",
+        "error"
+      );
       return;
     }
 
@@ -176,14 +226,28 @@ export default function Dashboard() {
         storyline,
         clue: clueText,
         name: clueName,
-        co1: [Number(points[0].lat), Number(points[0].lng)],
-        co2: [Number(points[1].lat), Number(points[1].lng)],
-        co3: [Number(points[2].lat), Number(points[2].lng)],
-        co4: [Number(points[3].lat), Number(points[3].lng)],
+        co1: [
+          Number(points[0].lat),
+          Number(points[0].lng),
+        ],
+        co2: [
+          Number(points[1].lat),
+          Number(points[1].lng),
+        ],
+        co3: [
+          Number(points[2].lat),
+          Number(points[2].lng),
+        ],
+        co4: [
+          Number(points[3].lat),
+          Number(points[3].lng),
+        ],
       });
 
       if (res.success) {
-        showResponse(`Clue ${clueNo} added successfully to ${trackMap[clueTrack]}.`);
+        showResponse(
+          `Clue ${clueNo} added successfully to ${trackMap[clueTrack]}.`
+        );
 
         setClueNo("");
         setClueName("");
@@ -199,11 +263,18 @@ export default function Dashboard() {
 
         setIsClueModalOpen(false);
       } else {
-        showResponse(res.message || "Error creating clue.", "error");
+        showResponse(
+          res.message || "Error creating clue.",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error creating clue:", error);
-      showResponse("Error creating clue.", "error");
+
+      showResponse(
+        error.message || "Error creating clue.",
+        "error"
+      );
     }
   };
 
@@ -215,6 +286,7 @@ export default function Dashboard() {
         <h1 className="text-4xl font-extrabold text-gray-800">
           Admin Dashboard
         </h1>
+
         <p className="mt-2 text-gray-500">
           Manage teams, tracks and clues
         </p>
@@ -223,10 +295,11 @@ export default function Dashboard() {
       {/* Response */}
       {response && (
         <div
-          className={`mb-6 rounded-lg border p-4 font-semibold ${responseType === "success"
-            ? "border-green-300 bg-green-100 text-green-700"
-            : "border-red-300 bg-red-100 text-red-700"
-            }`}
+          className={`mb-6 rounded-lg border p-4 font-semibold ${
+            responseType === "success"
+              ? "border-green-300 bg-green-100 text-green-700"
+              : "border-red-300 bg-red-100 text-red-700"
+          }`}
         >
           {response}
         </div>
@@ -236,7 +309,7 @@ export default function Dashboard() {
       <div className="mb-8 flex flex-wrap gap-4">
         <button
           type="button"
-          className="rounded-lg bg-green-600 px-5 py-3 font-semibold text-white shadow hover:bg-green-700 transition"
+          className="rounded-lg bg-green-600 px-5 py-3 font-semibold text-white shadow transition hover:bg-green-700"
           onClick={() => setIsTeamModalOpen(true)}
         >
           + Create New Team
@@ -244,7 +317,7 @@ export default function Dashboard() {
 
         <button
           type="button"
-          className="rounded-lg bg-purple-600 px-5 py-3 font-semibold text-white shadow hover:bg-purple-700 transition"
+          className="rounded-lg bg-purple-600 px-5 py-3 font-semibold text-white shadow transition hover:bg-purple-700"
           onClick={() => setIsClueModalOpen(true)}
         >
           + Add New Clue
@@ -258,35 +331,39 @@ export default function Dashboard() {
         </h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(trackMap).map(([trackId, trackName]) => (
-            <button
-              key={trackId}
-              type="button"
-              onClick={() => fetchTeams(trackId)}
-              disabled={isLoading}
-              className={`
-              rounded-xl px-6 py-4
-              font-bold text-white
-              shadow-md transition-all duration-200
-              hover:scale-[1.02] hover:shadow-lg
-              disabled:cursor-not-allowed disabled:opacity-60
-              ${track === trackId
-                  ? "ring-4 ring-offset-2"
-                  : ""
-                }
-              ${trackId === "a"
-                  ? "bg-blue-600 hover:bg-blue-700 ring-blue-300"
-                  : trackId === "b"
-                    ? "bg-green-600 hover:bg-green-700 ring-green-300"
-                    : trackId === "c"
+          {Object.entries(trackMap).map(
+            ([trackId, trackName]) => (
+              <button
+                key={trackId}
+                type="button"
+                onClick={() => fetchTeams(trackId)}
+                disabled={isLoading}
+                className={`
+                  rounded-xl px-6 py-4
+                  font-bold text-white
+                  shadow-md transition-all duration-200
+                  hover:scale-[1.02] hover:shadow-lg
+                  disabled:cursor-not-allowed disabled:opacity-60
+                  ${
+                    track === trackId
+                      ? "ring-4 ring-offset-2"
+                      : ""
+                  }
+                  ${
+                    trackId === "1"
+                      ? "bg-blue-600 hover:bg-blue-700 ring-blue-300"
+                      : trackId === "2"
+                      ? "bg-green-600 hover:bg-green-700 ring-green-300"
+                      : trackId === "3"
                       ? "bg-purple-600 hover:bg-purple-700 ring-purple-300"
                       : "bg-orange-600 hover:bg-orange-700 ring-orange-300"
-                }
-            `}
-            >
-              {trackName}
-            </button>
-          ))}
+                  }
+                `}
+              >
+                {trackName}
+              </button>
+            )
+          )}
         </div>
       </div>
 
@@ -299,7 +376,9 @@ export default function Dashboard() {
         </h3>
 
         {isLoading ? (
-          <p className="text-gray-600">Loading teams...</p>
+          <p className="text-gray-600">
+            Loading teams...
+          </p>
         ) : teams.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
@@ -308,12 +387,17 @@ export default function Dashboard() {
                   <th className="p-3">Team</th>
                   <th className="p-3">Credential</th>
                   <th className="p-3">Current Clue</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
 
               <tbody>
                 {teams.map((team) => (
-                  <tr key={team.id} className="border-b hover:bg-gray-50">
+                  <tr
+                    key={team.id}
+                    className="border-b hover:bg-gray-50"
+                  >
                     <td className="p-3 font-medium text-gray-800">
                       {team.name}
                     </td>
@@ -326,6 +410,48 @@ export default function Dashboard() {
 
                     <td className="p-3 text-gray-800">
                       {team.clueno}
+                    </td>
+
+                    <td className="p-3 text-center">
+                      {team.finished ? (
+                        team.qualified ? (
+                          <span className="font-bold text-green-600">
+                            QUALIFIED
+                          </span>
+                        ) : (
+                          <span className="font-bold text-gray-500">
+                            FINISHED
+                          </span>
+                        )
+                      ) : team.returning ? (
+                        <span className="font-bold text-orange-600">
+                          RETURNED TO OLD MESS
+                        </span>
+                      ) : (
+                        <span className="font-bold text-blue-600">
+                          IN PROGRESS
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="p-3 text-center">
+                      {team.finished ? (
+                        <span className="text-sm text-gray-400">
+                          Completed
+                        </span>
+                      ) : team.returning ? (
+                        <button
+                          type="button"
+                          onClick={() => finishTeam(team)}
+                          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+                        >
+                          Mark Arrived
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-400">
+                          —
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -429,9 +555,10 @@ export default function Dashboard() {
             value={clueName}
             onChange={(e) => setClueName(e.target.value)}
           />
+
           <textarea
             placeholder="Enter storyline for this checkpoint"
-            className="border px-4 py-3 mb-4 w-full rounded text-black min-h-32"
+            className="mb-4 min-h-32 w-full rounded border px-4 py-3 text-black"
             value={storyline}
             onChange={(e) => setStoryline(e.target.value)}
           />
@@ -448,7 +575,8 @@ export default function Dashboard() {
           </h3>
 
           <p className="mb-4 text-sm text-gray-500">
-            Enter the latitude and longitude for all four corners of the rectangle.
+            Enter the latitude and longitude for all four
+            corners of the rectangle.
           </p>
 
           {points.map((point, index) => (
@@ -468,7 +596,11 @@ export default function Dashboard() {
                   className="rounded border px-3 py-2 text-black"
                   value={point.lat}
                   onChange={(e) =>
-                    updatePoint(index, "lat", e.target.value)
+                    updatePoint(
+                      index,
+                      "lat",
+                      e.target.value
+                    )
                   }
                 />
 
@@ -479,7 +611,11 @@ export default function Dashboard() {
                   className="rounded border px-3 py-2 text-black"
                   value={point.lng}
                   onChange={(e) =>
-                    updatePoint(index, "lng", e.target.value)
+                    updatePoint(
+                      index,
+                      "lng",
+                      e.target.value
+                    )
                   }
                 />
               </div>

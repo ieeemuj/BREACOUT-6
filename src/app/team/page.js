@@ -38,16 +38,83 @@ const themeData = {
   },
 };
 
+/*
+|--------------------------------------------------------------------------
+| FINAL ENDINGS
+|--------------------------------------------------------------------------
+|
+| This screen is shown ONLY when the backend sets:
+|
+| returning: true
+|
+| That happens only after the final checkpoint is completed.
+|
+*/
+
+const finalData = {
+  "1": {
+    title: "The Citadel Reveals Its Truth",
+
+    storyline: `The full truth: the “soul” Thorne sealed in the Forge was never someone else's. It was his own — the frightened, honest boy who made a promise to Varek and meant to keep it.
+
+Every illusion since has been Thorne performing over that boy's silence.
+
+The Citadel doesn't need to be escaped.
+
+It needs to be forgiven.`,
+
+    clue: `You have broken every trick this dream had to give,
+chased its illusions, learned how it lives.
+But no dream ends where its lies were found —
+it ends where you first stepped onto its ground.
+
+Walk back now, retrace where you began,
+the exit was always the entrance's plan.`,
+  },
+
+  /*
+  Add the final endings for Paths B, C and D here
+  when you are ready.
+  */
+
+  "2": {
+    title: "The Sovereign Reveals Its Truth",
+    storyline: "The final truth has been revealed.",
+    clue: "Return now to where your journey began.",
+  },
+
+  "3": {
+    title: "The Nexus Reveals Its Truth",
+    storyline: "The final truth has been revealed.",
+    clue: "Return now to where your journey began.",
+  },
+
+  "4": {
+    title: "The Frontier Reveals Its Truth",
+    storyline: "The final truth has been revealed.",
+    clue: "Return now to where your journey began.",
+  },
+};
+
 const ThemePages = () => {
   const [theme, setTheme] = useState({});
   const [team, setTeam] = useState({});
   const [clue, setClue] = useState({});
+
   const [loading, setLoading] = useState(false);
   const [rendering, setRendering] = useState(true);
   const [countdown, setCountdown] = useState(0);
 
+  /*
+  |--------------------------------------------------------------------------
+  | GAME STATES
+  |--------------------------------------------------------------------------
+  */
+
+  const [returning, setReturning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [qualified, setQualified] = useState(false);
+
   const [finalTitle, setFinalTitle] = useState("");
   const [finalMessage, setFinalMessage] = useState("");
 
@@ -84,9 +151,13 @@ const ThemePages = () => {
           return;
         }
 
-        const storedTeam = JSON.parse(
-          localStorage.getItem("team") || "{}"
-        );
+        const responseTeam =
+          res.data?.team || null;
+
+        const storedTeam = responseTeam ||
+          JSON.parse(
+            localStorage.getItem("team") || "{}"
+          );
 
         const currentTheme =
           themeData[String(storedTeam.track)];
@@ -114,22 +185,49 @@ const ThemePages = () => {
         |--------------------------------------------------------------------------
         */
 
-        if (res.completed || res.code === 2000) {
+        if (res.finished || res.completed || res.code === 2000) {
           setFinished(true);
+          setReturning(false);
 
           setQualified(
-            Boolean(res.data?.qualified)
+            Boolean(
+              res.data?.team?.qualified ||
+              res.data?.qualified
+            )
           );
 
           setFinalTitle(
-            res.data?.finalTitle || "Path Complete"
+            res.data?.finalTitle ||
+            "Path Complete"
           );
 
           setFinalMessage(
             res.data?.finalMessage ||
             res.message ||
-            "You have completed your path. Report to the final common location."
+            "You have completed your path."
           );
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RETURNING TO OLD MESS
+        |--------------------------------------------------------------------------
+        |
+        | This is the important check.
+        |
+        | The final destination screen appears ONLY here.
+        |
+        */
+
+        if (
+          res.returning === true ||
+          res.data?.team?.returning === true ||
+          storedTeam.returning === true
+        ) {
+          setReturning(true);
+          setFinished(false);
 
           return;
         }
@@ -139,6 +237,9 @@ const ThemePages = () => {
         | CURRENT CLUE
         |--------------------------------------------------------------------------
         */
+
+        setReturning(false);
+        setFinished(false);
 
         if (res.data?.clue) {
           setClue(res.data.clue);
@@ -155,7 +256,10 @@ const ThemePages = () => {
           setClue(savedClue);
         }
       } catch (error) {
-        console.error("Error loading clue:", error);
+        console.error(
+          "Error loading clue:",
+          error
+        );
 
         setMessage({
           type: "error",
@@ -231,50 +335,99 @@ const ThemePages = () => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          console.log("GPS location:", lat, lng);
-
-          const res = await post("clue/submit", {
+          console.log(
+            "GPS location:",
             lat,
-            lng,
-          });
+            lng
+          );
 
-          console.log("SUBMIT RESPONSE:", res);
+          const res = await post(
+            "clue/submit",
+            {
+              lat,
+              lng,
+            }
+          );
 
-          /*
-          |--------------------------------------------------------------------------
-          | CORRECT LOCATION
-          |--------------------------------------------------------------------------
-          */
+          console.log(
+            "SUBMIT RESPONSE:",
+            res
+          );
 
           if (res.success) {
             /*
             |--------------------------------------------------------------------------
-            | JOURNEY FINISHED
+            | FINAL CHECKPOINT COMPLETED
             |--------------------------------------------------------------------------
+            |
+            | Backend has now set:
+            |
+            | returning = true
+            |
             */
 
-            if (res.completed || res.code === 2000) {
-              setFinished(true);
+            if (
+              res.returning === true ||
+              res.returningToOldMess === true ||
+              res.finalCheckpoint === true ||
+              res.data?.team?.returning === true
+            ) {
+              const updatedTeam =
+                res.data?.team;
 
-              setQualified(
-                Boolean(res.data?.qualified)
-              );
+              if (updatedTeam) {
+                setTeam(updatedTeam);
 
-              setFinalTitle(
-                res.data?.finalTitle ||
-                "Path Complete"
-              );
+                localStorage.setItem(
+                  "team",
+                  JSON.stringify(updatedTeam)
+                );
+              }
 
-              setFinalMessage(
-                res.data?.finalMessage ||
-                res.message ||
-                "You have completed your path. Report to the final common location."
-              );
+              setReturning(true);
+              setFinished(false);
+
+              localStorage.removeItem("clue");
 
               showMessage(
                 "success",
                 res.message ||
-                "Congratulations! You have completed your path."
+                  "The final gate opens. Return now to where your journey began."
+              );
+
+              return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | JOURNEY FINISHED BY ADMIN
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+              res.finished ||
+              res.completed ||
+              res.code === 2000
+            ) {
+              setFinished(true);
+              setReturning(false);
+
+              setQualified(
+                Boolean(
+                  res.data?.team?.qualified ||
+                  res.data?.qualified
+                )
+              );
+
+              setFinalTitle(
+                res.data?.finalTitle ||
+                  "Path Complete"
+              );
+
+              setFinalMessage(
+                res.data?.finalMessage ||
+                  res.message ||
+                  "You have completed your path."
               );
 
               localStorage.removeItem("clue");
@@ -284,12 +437,16 @@ const ThemePages = () => {
 
             /*
             |--------------------------------------------------------------------------
-            | NEXT STORYLINE + CLUE
+            | NEXT CLUE
             |--------------------------------------------------------------------------
             */
 
             const nextClue =
-              res.data?.clue || res.clue || null;
+              res.data?.nextClue ||
+              res.data?.clue ||
+              res.nextClue ||
+              res.clue ||
+              null;
 
             if (nextClue) {
               setClue(nextClue);
@@ -300,16 +457,28 @@ const ThemePages = () => {
               );
             }
 
+            const updatedTeam =
+              res.data?.team;
+
+            if (updatedTeam) {
+              setTeam(updatedTeam);
+
+              localStorage.setItem(
+                "team",
+                JSON.stringify(updatedTeam)
+              );
+            }
+
             showMessage(
               "success",
               res.message ||
-              "Correct location! The next part of your journey has been unlocked."
+                "Correct location! The next part of your journey has been unlocked."
             );
           } else {
             showMessage(
               "error",
               res.message ||
-              "You are not at the correct location."
+                "You are not at the correct location."
             );
 
             if (res.code === 1000) {
@@ -331,7 +500,7 @@ const ThemePages = () => {
           showMessage(
             "error",
             error.message ||
-            "Something went wrong while checking your location."
+              "Something went wrong while checking your location."
           );
         } finally {
           setCountdown(10);
@@ -340,7 +509,10 @@ const ThemePages = () => {
       },
 
       (err) => {
-        console.error("Geolocation error:", err);
+        console.error(
+          "Geolocation error:",
+          err
+        );
 
         if (err.code === 1) {
           showMessage(
@@ -391,6 +563,15 @@ const ThemePages = () => {
     );
   }
 
+  const currentFinal =
+    finalData[String(team.track)] || {
+      title: "The Final Truth",
+      storyline:
+        "The final truth has been revealed.",
+      clue:
+        "Return now to where your journey began.",
+    };
+
   /*
   |--------------------------------------------------------------------------
   | PAGE
@@ -422,7 +603,9 @@ const ThemePages = () => {
         >
           <div className="flex items-center justify-center gap-3">
             <span className="text-2xl font-bold">
-              {message.type === "success" ? "✓" : "✕"}
+              {message.type === "success"
+                ? "✓"
+                : "✕"}
             </span>
 
             <p className="text-sm font-semibold">
@@ -448,12 +631,13 @@ const ThemePages = () => {
         </p>
       </div>
 
-      {/* FINISHED SCREEN */}
+      {/* ========================================================= */}
+      {/* ADMIN HAS MARKED TEAM AS FINISHED                         */}
+      {/* ========================================================= */}
 
       {finished ? (
         <div className="flex justify-center items-center mt-10 mb-16 w-full">
           <div className="w-full max-w-xl rounded-2xl p-7 bg-black/70 border-2 border-[#D37E01] backdrop-blur-md shadow-2xl">
-
             <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-3">
               Journey Complete
             </p>
@@ -475,18 +659,78 @@ const ThemePages = () => {
             >
               <p className="font-bold">
                 {qualified
-                  ? "You are currently among the first four finishers!"
-                  : "Report to the final common location immediately."}
+                  ? "You have qualified for Round 2!"
+                  : "Your Round 1 journey has been completed."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      ) : returning ? (
+
+        /*
+        ============================================================
+        FINAL RETURN SCREEN
+
+        THIS ONLY APPEARS AFTER THE FINAL CHECKPOINT.
+        ============================================================
+        */
+
+        <div className="w-full max-w-2xl mt-10 mb-16">
+
+          {/* FINAL GATE */}
+
+          <div className="rounded-2xl p-7 bg-black/80 border-2 border-[#D37E01] backdrop-blur-md shadow-2xl">
+            <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-4">
+              The Final Gate Has Opened
+            </p>
+
+            <h2 className="text-[#D37E01] text-center text-3xl md:text-4xl font-astrolab mb-6">
+              {currentFinal.title}
+            </h2>
+
+            {/* FINAL STORYLINE */}
+
+            <div className="rounded-xl border border-white/20 bg-black/30 p-6">
+              <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-4">
+                Storyline
+              </p>
+
+              <p className="text-white text-center text-sm md:text-base font-geist-mono leading-relaxed whitespace-pre-line">
+                {currentFinal.storyline}
               </p>
             </div>
 
-            <p className="text-white/70 text-center text-xs mt-5 font-geist-mono">
-              The first four teams to reach the final common location
-              will qualify for the next round.
+            {/* FINAL CLUE */}
+
+            <div className="rounded-xl border-2 border-[#D37E01] bg-[#D37E01]/10 p-6 mt-6">
+              <p className="text-[#D37E01] text-center text-xs font-bold uppercase tracking-widest mb-4">
+                Final Clue
+              </p>
+
+              <p className="text-[#FFE2A8] text-center text-sm md:text-base font-geist-mono italic leading-relaxed whitespace-pre-line">
+                {currentFinal.clue}
+              </p>
+            </div>
+
+
+            <p className="text-[#FFE2A8] text-center text-sm mt-7 font-geist-mono">
+              The first team to return from each path qualifies for Round 2.
             </p>
           </div>
         </div>
+
       ) : (
+
+        /*
+        ============================================================
+        NORMAL GAME SCREEN
+
+        This is what players see from Clue 1 to Clue 5.
+        No final destination appears here.
+        ============================================================
+        */
+
         <>
           {/* STORYLINE */}
 

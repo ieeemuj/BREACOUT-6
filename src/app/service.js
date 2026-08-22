@@ -1,42 +1,68 @@
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://breacout-6-1.onrender.com";
 
+function buildUrl(endpoint) {
+  const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  return `${BASE_URL}/${cleanEndpoint}`;
+}
+
+async function handleResponse(response) {
+  const text = await response.text();
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Backend returned non-JSON (${response.status}): ${text.substring(0, 200)}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || `Request failed with status ${response.status}`
+    );
+  }
+
+  return data;
+}
+
 export async function get(endpoint) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${BASE_URL}/${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(buildUrl(endpoint), {
+    method: "GET",
+    headers,
   });
 
-  const text = await response.text();
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
-  }
+  return handleResponse(response);
 }
 
-export async function post(endpoint, data) {
+export async function post(endpoint, data = {}) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`${BASE_URL}/${endpoint}`, {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(buildUrl(endpoint), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
+    headers,
     body: JSON.stringify(data),
   });
 
-  const text = await response.text();
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Backend returned non-JSON: ${text.substring(0, 200)}`);
-  }
+  return handleResponse(response);
 }
